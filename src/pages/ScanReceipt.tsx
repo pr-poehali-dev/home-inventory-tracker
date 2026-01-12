@@ -35,38 +35,56 @@ const ScanReceipt = () => {
     };
   }, []);
 
-  const handleStartScan = () => {
-    if (!scannerDivRef.current) return;
+  const handleStartScan = async () => {
+    if (!scannerDivRef.current) {
+      toast.error('Ошибка инициализации сканера');
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      stream.getTracks().forEach(track => track.stop());
+    } catch (error) {
+      console.error('Camera permission error:', error);
+      toast.error('Не удалось получить доступ к камере. Проверьте разрешения в браузере.');
+      return;
+    }
     
     setIsScanning(true);
     
-    const scanner = new Html5QrcodeScanner(
-      'qr-reader',
-      { 
-        fps: 10, 
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0,
-        showTorchButtonIfSupported: true,
-      },
-      false
-    );
-    
-    scannerRef.current = scanner;
+    try {
+      const scanner = new Html5QrcodeScanner(
+        'qr-reader',
+        { 
+          fps: 10, 
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0,
+          showTorchButtonIfSupported: true,
+        },
+        false
+      );
+      
+      scannerRef.current = scanner;
 
-    scanner.render(
-      (decodedText) => {
-        toast.success('QR-код успешно отсканирован!');
-        console.log('Scanned:', decodedText);
-        
-        scanner.clear().catch(console.error);
-        setIsScanning(false);
-        
-        setTimeout(() => navigate('/'), 500);
-      },
-      (error) => {
-        console.warn('QR scan error:', error);
-      }
-    );
+      scanner.render(
+        (decodedText) => {
+          toast.success('QR-код успешно отсканирован!');
+          console.log('Scanned:', decodedText);
+          
+          scanner.clear().catch(console.error);
+          setIsScanning(false);
+          
+          setTimeout(() => navigate('/'), 500);
+        },
+        (error) => {
+          console.warn('QR scan error:', error);
+        }
+      );
+    } catch (error) {
+      console.error('Scanner initialization error:', error);
+      toast.error('Ошибка запуска сканера');
+      setIsScanning(false);
+    }
   };
 
   const handleStopScan = () => {
