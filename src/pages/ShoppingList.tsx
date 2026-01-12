@@ -6,20 +6,26 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
-import { shoppingApi, ShoppingItem } from '@/lib/api';
+import Sidebar from '@/components/Sidebar';
+import { shoppingApi, storageApi, ShoppingItem, StorageLocation } from '@/lib/api';
 import { AddShoppingItemDialog } from '@/components/AddShoppingItemDialog';
 import { toast } from 'sonner';
 
 const ShoppingList = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState<ShoppingItem[]>([]);
+  const [locations, setLocations] = useState<StorageLocation[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchItems = async () => {
     try {
-      const data = await shoppingApi.getItems();
-      setItems(data);
+      const [itemsData, locationsData] = await Promise.all([
+        shoppingApi.getItems(),
+        storageApi.getLocations()
+      ]);
+      setItems(itemsData);
+      setLocations(locationsData);
     } catch (error) {
       toast.error('Ошибка загрузки списка');
       console.error(error);
@@ -54,6 +60,7 @@ const ShoppingList = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-cyan-50 p-4">
+      <Sidebar locations={locations} />
       <div className="max-w-4xl mx-auto pb-24">
         <motion.div
           initial={{ opacity: 0, y: -20 }}

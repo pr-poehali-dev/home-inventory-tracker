@@ -1,26 +1,88 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
+import Sidebar from '@/components/Sidebar';
+import { storageApi, StorageLocation } from '@/lib/api';
 import { toast } from 'sonner';
+import { Html5QrcodeScanner, Html5QrcodeScannerState } from 'html5-qrcode';
 
 const ScanReceipt = () => {
   const navigate = useNavigate();
   const [isScanning, setIsScanning] = useState(false);
+  const [locations, setLocations] = useState<StorageLocation[]>([]);
+  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const scannerDivRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const data = await storageApi.getLocations();
+        setLocations(data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    
+    fetchLocations();
+
+    return () => {
+      if (scannerRef.current && scannerRef.current.getState() === Html5QrcodeScannerState.SCANNING) {
+        scannerRef.current.clear().catch(console.error);
+      }
+    };
+  }, []);
 
   const handleStartScan = () => {
+    if (!scannerDivRef.current) return;
+    
     setIsScanning(true);
-    setTimeout(() => {
-      setIsScanning(false);
-      toast.success('QR-код успешно отсканирован!');
-      navigate('/');
-    }, 2000);
+    
+    const scanner = new Html5QrcodeScanner(
+      'qr-reader',
+      { 
+        fps: 10, 
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0,
+        showTorchButtonIfSupported: true,
+      },
+      false
+    );
+    
+    scannerRef.current = scanner;
+
+    scanner.render(
+      (decodedText) => {
+        toast.success('QR-код успешно отсканирован!');
+        console.log('Scanned:', decodedText);
+        
+        scanner.clear().catch(console.error);
+        setIsScanning(false);
+        
+        setTimeout(() => navigate('/'), 500);
+      },
+      (error) => {
+        console.warn('QR scan error:', error);
+      }
+    );
+  };
+
+  const handleStopScan = () => {
+    if (scannerRef.current) {
+      scannerRef.current.clear()
+        .then(() => {
+          setIsScanning(false);
+          toast.info('Сканирование остановлено');
+        })
+        .catch(console.error);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-cyan-50 p-4">
+      <Sidebar locations={locations} />
       <div className="max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -55,45 +117,26 @@ const ScanReceipt = () => {
           transition={{ delay: 0.2 }}
         >
           <Card className="p-8 bg-white/80 backdrop-blur-sm text-center">
-            <div className="mb-6">
-              <div className="relative mx-auto w-64 h-64 rounded-3xl bg-gradient-to-br from-purple-100 to-cyan-100 flex items-center justify-center overflow-hidden">
-                {isScanning ? (
-                  <motion.div
-                    animate={{
-                      scale: [1, 1.2, 1],
-                      opacity: [0.5, 1, 0.5],
-                    }}
-                    transition={{
-                      duration: 1.5,
-                      repeat: Infinity,
-                    }}
-                    className="absolute inset-0 bg-gradient-to-br from-primary to-accent opacity-20"
-                  />
-                ) : null}
-                <Icon
-                  name="QrCode"
-                  size={120}
-                  className={isScanning ? 'text-primary animate-pulse' : 'text-muted-foreground'}
-                />
-              </div>
-            </div>
-
             {isScanning ? (
               <div className="space-y-4">
-                <motion.div
-                  animate={{ scale: [1, 1.05, 1] }}
-                  transition={{ duration: 1, repeat: Infinity }}
+                <div id="qr-reader" ref={scannerDivRef} className="w-full"></div>
+                <Button
+                  onClick={handleStopScan}
+                  size="lg"
+                  variant="outline"
+                  className="w-full text-lg h-14"
                 >
-                  <p className="text-xl font-semibold text-primary">
-                    Сканирование...
-                  </p>
-                </motion.div>
-                <p className="text-muted-foreground">
-                  Обрабатываем данные чека
-                </p>
+                  <Icon name="X" size={24} className="mr-2" />
+                  Отменить
+                </Button>
               </div>
             ) : (
               <div className="space-y-4">
+                <div className="mb-6">
+                  <div className="relative mx-auto w-64 h-64 rounded-3xl bg-gradient-to-br from-purple-100 to-cyan-100 flex items-center justify-center overflow-hidden">
+                    <Icon name="QrCode" size={120} className="text-muted-foreground" />
+                  </div>
+                </div>
                 <p className="text-lg font-medium">
                   QR-код на чеке находится внизу
                 </p>

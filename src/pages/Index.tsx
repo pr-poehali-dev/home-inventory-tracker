@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import Icon from '@/components/ui/icon';
+import Sidebar from '@/components/Sidebar';
 import { storageApi, shoppingApi, StorageLocation, ShoppingItem } from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -71,6 +72,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-cyan-50 p-4 pb-20">
+      <Sidebar locations={locations} />
       <div className="max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -143,36 +145,7 @@ const Index = () => {
               </motion.div>
             )}
 
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="show"
-              className="grid gap-4 md:grid-cols-2 mb-6"
-            >
-              {locations.map((location) => (
-            <motion.div key={location.id} variants={itemVariants}>
-              <Card
-                className="p-6 cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-white/80 backdrop-blur-sm border-2 hover:border-primary"
-                onClick={() => navigate(`/storage/${location.id}`)}
-              >
-                <div className="flex items-center gap-4">
-                  <div
-                    className={`${location.color} w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-lg`}
-                  >
-                    <Icon name={location.icon as any} size={28} />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-xl font-semibold mb-1">{location.name}</h3>
-                    <p className="text-muted-foreground">
-                      {location.items_count} товаров
-                    </p>
-                  </div>
-                  <Icon name="ChevronRight" size={24} className="text-muted-foreground" />
-                </div>
-              </Card>
-            </motion.div>
-              ))}
-            </motion.div>
+
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}

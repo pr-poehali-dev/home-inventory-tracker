@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
+import Sidebar from '@/components/Sidebar';
 import { storageApi, StorageLocation, Product } from '@/lib/api';
 import { AddProductDialog } from '@/components/AddProductDialog';
 import { ProductCard } from '@/components/ProductCard';
@@ -16,15 +17,20 @@ const StorageDetail = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [location, setLocation] = useState<StorageLocation | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [locations, setLocations] = useState<StorageLocation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = async () => {
     if (!id) return;
     
     try {
-      const data = await storageApi.getLocationWithProducts(id);
+      const [data, locationsData] = await Promise.all([
+        storageApi.getLocationWithProducts(id),
+        storageApi.getLocations()
+      ]);
       setLocation(data.location);
       setProducts(data.products);
+      setLocations(locationsData);
     } catch (error) {
       toast.error('Ошибка загрузки данных');
       console.error(error);
@@ -60,6 +66,7 @@ const StorageDetail = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-cyan-50 p-4">
+      <Sidebar locations={locations} />
       <div className="max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
