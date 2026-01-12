@@ -15,6 +15,8 @@ const Index = () => {
   const [locations, setLocations] = useState<StorageLocation[]>([]);
   const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallButton, setShowInstallButton] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -35,6 +37,32 @@ const Index = () => {
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallButton(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+
+    (deferredPrompt as any).prompt();
+    const { outcome } = await (deferredPrompt as any).userChoice;
+
+    if (outcome === 'accepted') {
+      toast.success('Приложение установлено!');
+    }
+
+    setDeferredPrompt(null);
+    setShowInstallButton(false);
+  };
 
   const toggleShoppingItem = async (id: string) => {
     const item = shoppingItems.find((i) => i.id === id);
@@ -146,6 +174,24 @@ const Index = () => {
             )}
 
 
+
+            {showInstallButton && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="mb-4"
+              >
+                <Button
+                  onClick={handleInstallClick}
+                  size="lg"
+                  className="w-full h-14 text-lg bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg"
+                >
+                  <Icon name="Download" size={24} className="mr-2" />
+                  Установить приложение
+                </Button>
+              </motion.div>
+            )}
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
