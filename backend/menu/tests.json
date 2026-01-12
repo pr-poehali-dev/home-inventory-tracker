@@ -1,0 +1,16 @@
+{
+  "tests": [
+    {
+      "name": "Get all recipes",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Get prepared meals",
+      "method": "GET",
+      "path": "/?action=prepared_meals",
+      "expectedStatus": 200
+    }
+  ]
+}

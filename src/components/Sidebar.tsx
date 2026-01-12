@@ -17,6 +17,7 @@ const Sidebar = ({ locations }: SidebarProps) => {
 
   const menuItems = [
     { path: '/', icon: 'Home', label: 'Главная' },
+    { path: '/menu', icon: 'ChefHat', label: 'Меню' },
     { path: '/shopping-list', icon: 'ShoppingCart', label: 'Список покупок' },
     { path: '/receipts', icon: 'Receipt', label: 'Чеки' },
     { path: '/budget', icon: 'Wallet', label: 'Бюджет' },

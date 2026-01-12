@@ -2,6 +2,7 @@ const API_BASE = {
   storage: 'https://functions.poehali.dev/575d5adf-f1ad-4840-8e0a-2ffd7b4bef19',
   shopping: 'https://functions.poehali.dev/b6020faf-a0aa-4f1e-8d41-3ddab94980f8',
   budget: 'https://functions.poehali.dev/1a040252-43be-4273-a42d-37e30c769d98',
+  menu: 'https://functions.poehali.dev/13e1bc4f-ec65-493a-9d0c-3814d31d7d0f',
 };
 
 export interface StorageLocation {
@@ -190,6 +191,110 @@ export const budgetApi = {
   async getAnalytics(period: number = 30): Promise<any[]> {
     const response = await fetch(`${API_BASE.budget}?action=analytics&period=${period}`);
     if (!response.ok) throw new Error('Failed to fetch analytics');
+    return response.json();
+  },
+};
+
+export interface Recipe {
+  id: string;
+  name: string;
+  description?: string;
+  total_calories?: number;
+  cooking_time?: number;
+  servings: number;
+  image_url?: string;
+  created_at: string;
+}
+
+export interface RecipeIngredient {
+  id: string;
+  recipe_id: string;
+  product_name: string;
+  quantity: number;
+  unit: string;
+}
+
+export interface PreparedMeal {
+  id: string;
+  recipe_id: string;
+  recipe_name: string;
+  total_calories?: number;
+  image_url?: string;
+  prepared_date: string;
+  servings_left: number;
+  status: string;
+}
+
+export interface PlannedRecipe {
+  id: string;
+  recipe_id: string;
+  recipe_name: string;
+  total_calories?: number;
+  cooking_time?: number;
+  status: string;
+  missing_products?: any;
+  planned_date: string;
+}
+
+export const menuApi = {
+  async getRecipes(): Promise<Recipe[]> {
+    const response = await fetch(API_BASE.menu);
+    if (!response.ok) throw new Error('Failed to fetch recipes');
+    return response.json();
+  },
+
+  async getRecipe(id: string): Promise<{ recipe: Recipe; ingredients: RecipeIngredient[] }> {
+    const response = await fetch(`${API_BASE.menu}?recipe_id=${id}`);
+    if (!response.ok) throw new Error('Failed to fetch recipe');
+    return response.json();
+  },
+
+  async getPreparedMeals(): Promise<PreparedMeal[]> {
+    const response = await fetch(`${API_BASE.menu}?action=prepared_meals`);
+    if (!response.ok) throw new Error('Failed to fetch prepared meals');
+    return response.json();
+  },
+
+  async getPlannedRecipes(): Promise<PlannedRecipe[]> {
+    const response = await fetch(`${API_BASE.menu}?action=planned`);
+    if (!response.ok) throw new Error('Failed to fetch planned recipes');
+    return response.json();
+  },
+
+  async planRecipe(recipeId: string): Promise<any> {
+    const response = await fetch(`${API_BASE.menu}?action=plan_recipe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recipe_id: recipeId }),
+    });
+    if (!response.ok) throw new Error('Failed to plan recipe');
+    return response.json();
+  },
+
+  async prepareRecipe(plannedId: string): Promise<PreparedMeal> {
+    const response = await fetch(`${API_BASE.menu}?action=prepare`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ planned_id: plannedId }),
+    });
+    if (!response.ok) throw new Error('Failed to prepare recipe');
+    return response.json();
+  },
+
+  async cancelPlan(plannedId: string): Promise<void> {
+    const response = await fetch(`${API_BASE.menu}?action=cancel_plan&id=${plannedId}`, {
+      method: 'PUT',
+    });
+    if (!response.ok) throw new Error('Failed to cancel plan');
+  },
+
+  async createRecipe(data: { name: string; description?: string; total_calories?: number; cooking_time?: number; servings?: number; ingredients: RecipeIngredient[] }): Promise<Recipe> {
+    const response = await fetch(`${API_BASE.menu}?action=create_recipe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to create recipe');
     return response.json();
   },
 };
