@@ -108,6 +108,28 @@ def handler(event: dict, context) -> dict:
                 'isBase64Encoded': False
             }
 
+        elif method == 'DELETE':
+            path = event.get('pathParams', {})
+            item_id = path.get('id')
+
+            if not item_id:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'Item ID required'}),
+                    'isBase64Encoded': False
+                }
+
+            cur.execute(f'DELETE FROM {SCHEMA}.shopping_items WHERE id = %s', (item_id,))
+            conn.commit()
+
+            return {
+                'statusCode': 204,
+                'headers': {'Access-Control-Allow-Origin': '*'},
+                'body': '',
+                'isBase64Encoded': False
+            }
+
         return {
             'statusCode': 405,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},

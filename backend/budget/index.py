@@ -179,6 +179,25 @@ def handler(event: dict, context) -> dict:
                 }
 
         elif method == 'DELETE':
+            if action == 'delete_transaction':
+                transaction_id = query_params.get('id')
+                if not transaction_id:
+                    return {
+                        'statusCode': 400,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'Transaction ID required'}),
+                        'isBase64Encoded': False
+                    }
+                
+                cur.execute(f'DELETE FROM {SCHEMA}.transactions WHERE id = %s', (transaction_id,))
+                conn.commit()
+                return {
+                    'statusCode': 204,
+                    'headers': {'Access-Control-Allow-Origin': '*'},
+                    'body': '',
+                    'isBase64Encoded': False
+                }
+
             if action == 'category':
                 category_id = query_params.get('id')
                 cur.execute(f'UPDATE {SCHEMA}.budget_categories SET name = name WHERE id = %s', (category_id,))
@@ -189,16 +208,6 @@ def handler(event: dict, context) -> dict:
                     'body': json.dumps({'success': True}),
                     'isBase64Encoded': False
                 }
-
-            transaction_id = query_params.get('id')
-            cur.execute(f'UPDATE {SCHEMA}.transactions SET amount = 0 WHERE id = %s', (transaction_id,))
-            conn.commit()
-            return {
-                'statusCode': 200,
-                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'success': True}),
-                'isBase64Encoded': False
-            }
 
         return {
             'statusCode': 405,

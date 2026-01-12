@@ -138,6 +138,13 @@ export const shoppingApi = {
     if (!response.ok) throw new Error('Failed to update item');
     return response.json();
   },
+
+  async deleteItem(id: string): Promise<void> {
+    const response = await fetch(`${API_BASE.shopping}?id=${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete item');
+  },
 };
 
 export interface BudgetCategory {
@@ -193,6 +200,13 @@ export const budgetApi = {
     const response = await fetch(`${API_BASE.budget}?action=analytics&period=${period}`);
     if (!response.ok) throw new Error('Failed to fetch analytics');
     return response.json();
+  },
+
+  async deleteTransaction(id: string): Promise<void> {
+    const response = await fetch(`${API_BASE.budget}?action=delete_transaction&id=${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete transaction');
   },
 };
 
@@ -297,6 +311,20 @@ export const menuApi = {
     });
     if (!response.ok) throw new Error('Failed to create recipe');
     return response.json();
+  },
+
+  async deleteRecipe(id: string): Promise<void> {
+    const response = await fetch(`${API_BASE.menu}?action=delete_recipe&id=${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete recipe');
+  },
+
+  async deletePreparedMeal(id: string): Promise<void> {
+    const response = await fetch(`${API_BASE.menu}?action=delete_meal&id=${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete meal');
   },
 };
 

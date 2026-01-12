@@ -48,6 +48,17 @@ const StorageDetail = () => {
     return Array.from(cats);
   }, [products]);
 
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      await storageApi.deleteProduct(productId);
+      await fetchData();
+      toast.success('Продукт удален');
+    } catch (error) {
+      toast.error('Ошибка удаления');
+      console.error(error);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-cyan-50">
@@ -118,7 +129,7 @@ const StorageDetail = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.05 }}
             >
-              <ProductCard product={product} />
+              <ProductCard product={product} onDelete={handleDeleteProduct} />
             </motion.div>
           ))}
 

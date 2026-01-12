@@ -82,6 +82,17 @@ const Budget = () => {
     }
   };
 
+  const handleDeleteTransaction = async (id: string) => {
+    try {
+      await budgetApi.deleteTransaction(id);
+      await fetchData();
+      toast.success('Транзакция удалена');
+    } catch (error) {
+      toast.error('Ошибка удаления');
+      console.error(error);
+    }
+  };
+
   const filteredCategories = categories.filter((c) => c.type === formData.type);
   const incomeCategories = categories.filter((c) => c.type === 'income');
   const expenseCategories = categories.filter((c) => c.type === 'expense');
@@ -186,7 +197,7 @@ const Budget = () => {
                     {transactions.map((t) => (
                       <Card key={t.id} className="p-4 bg-white/80 backdrop-blur-sm hover:shadow-md transition-shadow">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3 flex-1">
                             <div className={`${t.color || 'bg-gray-500'} w-10 h-10 rounded-full flex items-center justify-center text-white`}>
                               <Icon name={(t.icon as any) || 'Package'} size={20} />
                             </div>
@@ -196,9 +207,19 @@ const Budget = () => {
                               <p className="text-xs text-muted-foreground">{new Date(t.date).toLocaleDateString('ru')}</p>
                             </div>
                           </div>
-                          <p className={`text-lg font-bold ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                            {t.type === 'income' ? '+' : '-'}{t.amount.toLocaleString()} ₽
-                          </p>
+                          <div className="flex items-center gap-3">
+                            <p className={`text-lg font-bold ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                              {t.type === 'income' ? '+' : '-'}{t.amount.toLocaleString()} ₽
+                            </p>
+                            <Button
+                              onClick={() => handleDeleteTransaction(t.id)}
+                              size="sm"
+                              variant="ghost"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                            >
+                              <Icon name="Trash2" size={14} />
+                            </Button>
+                          </div>
                         </div>
                       </Card>
                     ))}

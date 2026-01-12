@@ -79,6 +79,28 @@ const Menu = () => {
     }
   };
 
+  const handleDeleteRecipe = async (recipeId: string) => {
+    try {
+      await menuApi.deleteRecipe(recipeId);
+      await fetchData();
+      toast.success('Рецепт удален');
+    } catch (error) {
+      toast.error('Ошибка удаления');
+      console.error(error);
+    }
+  };
+
+  const handleDeleteMeal = async (mealId: string) => {
+    try {
+      await menuApi.deletePreparedMeal(mealId);
+      await fetchData();
+      toast.success('Блюдо удалено');
+    } catch (error) {
+      toast.error('Ошибка удаления');
+      console.error(error);
+    }
+  };
+
   const availableRecipes = recipes.filter(r => 
     !plannedRecipes.find(p => p.recipe_id === r.id && p.status === 'planned')
   );
@@ -132,9 +154,19 @@ const Menu = () => {
                     <Card key={meal.id} className="p-6 bg-white/80 backdrop-blur-sm hover:shadow-lg transition-shadow">
                       <div className="flex items-start justify-between mb-3">
                         <h3 className="text-lg font-semibold">{meal.recipe_name}</h3>
-                        <Badge variant="outline" className="bg-green-100 text-green-700">
-                          {meal.servings_left} порций
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="bg-green-100 text-green-700">
+                            {meal.servings_left} порций
+                          </Badge>
+                          <Button
+                            onClick={() => handleDeleteMeal(meal.id)}
+                            size="sm"
+                            variant="ghost"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                          >
+                            <Icon name="Trash2" size={14} />
+                          </Button>
+                        </div>
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
@@ -252,6 +284,14 @@ const Menu = () => {
                           size="sm"
                         >
                           <Icon name="Eye" size={16} />
+                        </Button>
+                        <Button
+                          onClick={() => handleDeleteRecipe(recipe.id)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Icon name="Trash2" size={16} />
                         </Button>
                       </div>
                     </Card>

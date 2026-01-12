@@ -55,6 +55,17 @@ const ShoppingList = () => {
     }
   };
 
+  const handleDeleteItem = async (id: string) => {
+    try {
+      await shoppingApi.deleteItem(id);
+      await fetchItems();
+      toast.success('Товар удален');
+    } catch (error) {
+      toast.error('Ошибка удаления');
+      console.error(error);
+    }
+  };
+
   const unpurchasedItems = items.filter((item) => !item.is_purchased);
   const purchasedItems = items.filter((item) => item.is_purchased);
 
@@ -140,6 +151,14 @@ const ShoppingList = () => {
                             </p>
                           )}
                         </div>
+                        <Button
+                          onClick={() => handleDeleteItem(item.id)}
+                          size="sm"
+                          variant="ghost"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Icon name="Trash2" size={16} />
+                        </Button>
                       </div>
                     </Card>
                   </motion.div>
@@ -185,6 +204,14 @@ const ShoppingList = () => {
                           {item.quantity} {item.unit}
                         </p>
                       </div>
+                      <Button
+                        onClick={() => handleDeleteItem(item.id)}
+                        size="sm"
+                        variant="ghost"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Icon name="Trash2" size={16} />
+                      </Button>
                     </div>
                   </Card>
                 ))}

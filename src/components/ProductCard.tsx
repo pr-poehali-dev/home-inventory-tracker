@@ -1,13 +1,15 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import { Product } from '@/lib/api';
 
 interface ProductCardProps {
   product: Product;
+  onDelete?: (id: string) => void;
 }
 
-export const ProductCard = ({ product }: ProductCardProps) => {
+export const ProductCard = ({ product, onDelete }: ProductCardProps) => {
   const isExpiringSoon = product.expiry_date
     ? new Date(product.expiry_date) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     : false;
@@ -66,6 +68,16 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             <Badge className="text-xs bg-warning text-white">
               Скоро истечёт
             </Badge>
+          )}
+          {onDelete && (
+            <Button
+              onClick={() => onDelete(product.id)}
+              size="sm"
+              variant="ghost"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Icon name="Trash2" size={16} />
+            </Button>
           )}
         </div>
       </div>

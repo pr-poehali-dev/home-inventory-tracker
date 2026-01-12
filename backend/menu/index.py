@@ -288,6 +288,49 @@ def handler(event: dict, context) -> dict:
                     'isBase64Encoded': False
                 }
 
+        elif method == 'DELETE':
+            if action == 'delete_recipe':
+                recipe_id = query_params.get('id')
+                
+                if not recipe_id:
+                    return {
+                        'statusCode': 400,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'Recipe ID required'}),
+                        'isBase64Encoded': False
+                    }
+                
+                cur.execute(f'DELETE FROM {SCHEMA}.recipes WHERE id = %s', (recipe_id,))
+                conn.commit()
+                
+                return {
+                    'statusCode': 204,
+                    'headers': {'Access-Control-Allow-Origin': '*'},
+                    'body': '',
+                    'isBase64Encoded': False
+                }
+            
+            elif action == 'delete_meal':
+                meal_id = query_params.get('id')
+                
+                if not meal_id:
+                    return {
+                        'statusCode': 400,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'Meal ID required'}),
+                        'isBase64Encoded': False
+                    }
+                
+                cur.execute(f'DELETE FROM {SCHEMA}.prepared_meals WHERE id = %s', (meal_id,))
+                conn.commit()
+                
+                return {
+                    'statusCode': 204,
+                    'headers': {'Access-Control-Allow-Origin': '*'},
+                    'body': '',
+                    'isBase64Encoded': False
+                }
+
         return {
             'statusCode': 405,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
