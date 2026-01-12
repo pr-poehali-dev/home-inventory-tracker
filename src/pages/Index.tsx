@@ -17,6 +17,8 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallButton, setShowInstallButton] = useState(false);
+  const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,6 +41,15 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
+    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    
+    setIsIOS(isIOSDevice);
+    
+    if (isIOSDevice && !isStandalone) {
+      setShowInstallButton(true);
+    }
+
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -51,7 +62,15 @@ const Index = () => {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
+    if (isIOS) {
+      setShowIOSInstructions(true);
+      return;
+    }
+
+    if (!deferredPrompt) {
+      toast.info('Установка доступна только в поддерживаемых браузерах');
+      return;
+    }
 
     (deferredPrompt as any).prompt();
     const { outcome } = await (deferredPrompt as any).userChoice;
@@ -190,6 +209,47 @@ const Index = () => {
                   <Icon name="Download" size={24} className="mr-2" />
                   Установить приложение
                 </Button>
+              </motion.div>
+            )}
+
+            {showIOSInstructions && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4"
+              >
+                <Card className="bg-blue-50/80 backdrop-blur-sm border-blue-200">
+                  <div className="p-5">
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="text-lg font-semibold text-blue-900 flex items-center gap-2">
+                        <Icon name="Info" size={20} />
+                        Как установить на iPhone
+                      </h3>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowIOSInstructions(false)}
+                        className="h-6 w-6 p-0"
+                      >
+                        <Icon name="X" size={16} />
+                      </Button>
+                    </div>
+                    <ol className="space-y-2 text-sm text-blue-900">
+                      <li className="flex items-start gap-2">
+                        <span className="font-semibold min-w-[20px]">1.</span>
+                        <span>Нажмите кнопку <strong>"Поделиться"</strong> (квадрат со стрелкой вверх) внизу экрана Safari</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="font-semibold min-w-[20px]">2.</span>
+                        <span>Прокрутите вниз и выберите <strong>"На экран «Домой»"</strong></span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="font-semibold min-w-[20px]">3.</span>
+                        <span>Нажмите <strong>"Добавить"</strong></span>
+                      </li>
+                    </ol>
+                  </div>
+                </Card>
               </motion.div>
             )}
 
