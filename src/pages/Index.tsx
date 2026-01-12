@@ -43,20 +43,34 @@ const Index = () => {
   useEffect(() => {
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    const isInApp = (window.navigator as any).standalone === true;
     
     setIsIOS(isIOSDevice);
     
-    if (isIOSDevice && !isStandalone) {
+    // Show install button for iOS if not already installed
+    if (isIOSDevice && !isStandalone && !isInApp) {
+      console.log('iOS detected, showing install button');
       setShowInstallButton(true);
     }
 
     const handler = (e: Event) => {
+      console.log('beforeinstallprompt event fired');
       e.preventDefault();
       setDeferredPrompt(e);
       setShowInstallButton(true);
     };
 
     window.addEventListener('beforeinstallprompt', handler);
+    
+    // Check if already installed
+    if ('getInstalledRelatedApps' in navigator) {
+      (navigator as any).getInstalledRelatedApps().then((apps: any[]) => {
+        if (apps.length > 0) {
+          console.log('App already installed');
+          setShowInstallButton(false);
+        }
+      });
+    }
 
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
