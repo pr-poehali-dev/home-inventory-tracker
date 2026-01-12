@@ -71,8 +71,8 @@ def handler(event: dict, context) -> dict:
             }
 
         elif method == 'PUT':
-            path = event.get('pathParams', {})
-            item_id = path.get('id')
+            query_params = event.get('queryStringParameters', {}) or {}
+            item_id = query_params.get('id')
             body = json.loads(event.get('body', '{}'))
 
             if not item_id:
@@ -109,8 +109,8 @@ def handler(event: dict, context) -> dict:
             }
 
         elif method == 'DELETE':
-            path = event.get('pathParams', {})
-            item_id = path.get('id')
+            query_params = event.get('queryStringParameters', {}) or {}
+            item_id = query_params.get('id')
 
             if not item_id:
                 return {
