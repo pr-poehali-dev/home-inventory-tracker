@@ -1,0 +1,22 @@
+{
+  "tests": [
+    {
+      "name": "Get shopping list",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Add item to shopping list",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "name": "Test Item",
+        "quantity": 2,
+        "unit": "шт",
+        "category": "Test"
+      },
+      "expectedStatus": 201
+    }
+  ]
+}

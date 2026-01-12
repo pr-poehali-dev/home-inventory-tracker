@@ -1,0 +1,23 @@
+{
+  "tests": [
+    {
+      "name": "Get all storage locations",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Add product to storage",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "name": "Test Product",
+        "quantity": 5,
+        "unit": "шт",
+        "category": "Test",
+        "storageLocationId": "c0de59cf-a187-4023-ab01-5882d2718d82"
+      },
+      "expectedStatus": 201
+    }
+  ]
+}
