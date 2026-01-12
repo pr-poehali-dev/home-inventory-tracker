@@ -172,25 +172,18 @@ const Menu = () => {
                         <div className="flex items-center gap-4">
                           <div className="flex items-center gap-1">
                             <Icon name="Flame" size={16} />
-                            {Math.round(meal.total_calories || 0)} ккал
-                            {meal.total_weight && (
-                              <span className="text-xs ml-1">
-                                ({Math.round((meal.total_calories || 0) / (meal.servings_left || 1))} ккал/порция)
-                              </span>
-                            )}
+                            {Math.round(meal.total_calories || 0)} ккал/100г
                           </div>
-                        </div>
-                        <div className="flex items-center gap-4">
                           {meal.total_weight && (
                             <div className="flex items-center gap-1">
                               <Icon name="Weight" size={16} />
                               {Math.round(meal.total_weight)} г
                             </div>
                           )}
-                          <div className="flex items-center gap-1">
-                            <Icon name="Calendar" size={16} />
-                            {new Date(meal.prepared_date).toLocaleDateString('ru')}
-                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Icon name="Calendar" size={16} />
+                          {new Date(meal.prepared_date).toLocaleDateString('ru')}
                         </div>
                       </div>
                     </Card>

@@ -244,11 +244,13 @@ def handler(event: dict, context) -> dict:
                             total_calories += calories
                             total_weight += ingredient_weight_g
                 
+                calories_per_100g = (total_calories / total_weight * 100) if total_weight > 0 else 0
+                
                 cur.execute(
                     f'''INSERT INTO {SCHEMA}.prepared_meals 
                         (recipe_id, servings_left, status, total_calories, total_weight)
                         VALUES (%s, %s, 'available', %s, %s) RETURNING *''',
-                    (planned['recipe_id'], planned['servings'], total_calories, total_weight)
+                    (planned['recipe_id'], planned['servings'], calories_per_100g, total_weight)
                 )
                 meal = cur.fetchone()
                 
@@ -325,6 +327,9 @@ def handler(event: dict, context) -> dict:
                         'isBase64Encoded': False
                     }
                 
+                cur.execute(f'DELETE FROM {SCHEMA}.prepared_meals WHERE recipe_id = %s', (recipe_id,))
+                cur.execute(f'DELETE FROM {SCHEMA}.planned_recipes WHERE recipe_id = %s', (recipe_id,))
+                cur.execute(f'DELETE FROM {SCHEMA}.recipe_ingredients WHERE recipe_id = %s', (recipe_id,))
                 cur.execute(f'DELETE FROM {SCHEMA}.recipes WHERE id = %s', (recipe_id,))
                 conn.commit()
                 
