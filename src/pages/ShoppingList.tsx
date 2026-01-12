@@ -9,6 +9,7 @@ import Icon from '@/components/ui/icon';
 import Sidebar from '@/components/Sidebar';
 import { shoppingApi, storageApi, ShoppingItem, StorageLocation } from '@/lib/api';
 import { AddShoppingItemDialog } from '@/components/AddShoppingItemDialog';
+import { AddToStorageDialog } from '@/components/AddToStorageDialog';
 import { toast } from 'sonner';
 
 const ShoppingList = () => {
@@ -17,6 +18,7 @@ const ShoppingList = () => {
   const [locations, setLocations] = useState<StorageLocation[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedItemForStorage, setSelectedItemForStorage] = useState<ShoppingItem | null>(null);
 
   const fetchItems = async () => {
     try {
@@ -42,15 +44,34 @@ const ShoppingList = () => {
     const item = items.find((i) => i.id === id);
     if (!item) return;
 
+    if (!item.is_purchased) {
+      setSelectedItemForStorage(item);
+      return;
+    }
+
     try {
-      await shoppingApi.toggleItem(id, !item.is_purchased);
+      await shoppingApi.toggleItem(id, false);
       setItems((prev) =>
         prev.map((i) =>
-          i.id === id ? { ...i, is_purchased: !i.is_purchased } : i
+          i.id === id ? { ...i, is_purchased: false } : i
         )
       );
     } catch (error) {
       toast.error('Ошибка обновления статуса');
+      console.error(error);
+    }
+  };
+
+  const handleLocationSelect = async (locationId: string) => {
+    if (!selectedItemForStorage) return;
+
+    try {
+      await shoppingApi.toggleItem(selectedItemForStorage.id, true, locationId);
+      await fetchItems();
+      toast.success('Товар куплен и добавлен в запасы');
+      setSelectedItemForStorage(null);
+    } catch (error) {
+      toast.error('Ошибка добавления в запасы');
       console.error(error);
     }
   };
@@ -253,6 +274,14 @@ const ShoppingList = () => {
           open={isAddDialogOpen}
           onOpenChange={setIsAddDialogOpen}
           onItemAdded={fetchItems}
+        />
+
+        <AddToStorageDialog
+          open={selectedItemForStorage !== null}
+          onOpenChange={(open) => !open && setSelectedItemForStorage(null)}
+          locations={locations}
+          onLocationSelect={handleLocationSelect}
+          itemName={selectedItemForStorage?.name || ''}
         />
       </div>
     </div>

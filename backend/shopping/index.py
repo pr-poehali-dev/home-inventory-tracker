@@ -83,20 +83,62 @@ def handler(event: dict, context) -> dict:
                     'isBase64Encoded': False
                 }
 
+            is_purchased = body.get('isPurchased')
+            storage_location_id = body.get('storageLocationId')
+            
             cur.execute(
-                f'UPDATE {SCHEMA}.shopping_items SET is_purchased = %s WHERE id = %s RETURNING *',
-                (body.get('isPurchased'), item_id)
+                f'SELECT * FROM {SCHEMA}.shopping_items WHERE id = %s',
+                (item_id,)
             )
-            item = cur.fetchone()
-            conn.commit()
-
-            if not item:
+            old_item = cur.fetchone()
+            
+            if not old_item:
                 return {
                     'statusCode': 404,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
                     'body': json.dumps({'error': 'Item not found'}),
                     'isBase64Encoded': False
                 }
+            
+            cur.execute(
+                f'UPDATE {SCHEMA}.shopping_items SET is_purchased = %s WHERE id = %s RETURNING *',
+                (is_purchased, item_id)
+            )
+            item = cur.fetchone()
+            
+            if is_purchased and not old_item['is_purchased'] and storage_location_id:
+                cur.execute(
+                    f'''SELECT id FROM {SCHEMA}.products 
+                        WHERE LOWER(TRIM(name)) = LOWER(TRIM(%s)) 
+                        AND storage_location_id = %s
+                        LIMIT 1''',
+                    (item['name'], storage_location_id)
+                )
+                existing_product = cur.fetchone()
+                
+                if existing_product:
+                    cur.execute(
+                        f'''UPDATE {SCHEMA}.products 
+                            SET quantity = quantity + %s 
+                            WHERE id = %s''',
+                        (item['quantity'], existing_product['id'])
+                    )
+                else:
+                    cur.execute(
+                        f'''INSERT INTO {SCHEMA}.products 
+                            (name, quantity, unit, category, storage_location_id, notes)
+                            VALUES (%s, %s, %s, %s, %s, %s)''',
+                        (
+                            item['name'],
+                            item['quantity'],
+                            item['unit'],
+                            item['category'],
+                            storage_location_id,
+                            'Добавлено из списка покупок'
+                        )
+                    )
+            
+            conn.commit()
 
             return {
                 'statusCode': 200,

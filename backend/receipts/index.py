@@ -80,6 +80,23 @@ def handler(event: dict, context) -> dict:
                     (receipt_id, item_name, item_quantity, item_price, item_total, 
                      category_name, category_id)
                 )
+                
+                cur.execute(
+                    f'''SELECT id FROM {SCHEMA}.shopping_items 
+                        WHERE LOWER(TRIM(name)) = LOWER(TRIM(%s)) 
+                        AND is_purchased = FALSE
+                        LIMIT 1''',
+                    (item_name,)
+                )
+                matching_shopping_item = cur.fetchone()
+                
+                if matching_shopping_item:
+                    cur.execute(
+                        f'''UPDATE {SCHEMA}.shopping_items 
+                            SET is_purchased = TRUE 
+                            WHERE id = %s''',
+                        (matching_shopping_item['id'],)
+                    )
             
             cur.execute(
                 f'UPDATE {SCHEMA}.receipts SET total_amount = %s, status = ''processed'' WHERE id = %s',
