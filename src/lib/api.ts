@@ -3,6 +3,7 @@ const API_BASE = {
   shopping: 'https://functions.poehali.dev/b6020faf-a0aa-4f1e-8d41-3ddab94980f8',
   budget: 'https://functions.poehali.dev/1a040252-43be-4273-a42d-37e30c769d98',
   menu: 'https://functions.poehali.dev/13e1bc4f-ec65-493a-9d0c-3814d31d7d0f',
+  receipts: 'https://functions.poehali.dev/184e5760-0557-4598-8e1a-be19c6c0e928',
 };
 
 export interface StorageLocation {
@@ -295,6 +296,33 @@ export const menuApi = {
       body: JSON.stringify(data),
     });
     if (!response.ok) throw new Error('Failed to create recipe');
+    return response.json();
+  },
+};
+
+export interface Receipt {
+  id: string;
+  qr_code: string;
+  total_amount?: number;
+  scan_date: string;
+  status: string;
+  created_at: string;
+}
+
+export const receiptsApi = {
+  async getReceipts(): Promise<Receipt[]> {
+    const response = await fetch(API_BASE.receipts);
+    if (!response.ok) throw new Error('Failed to fetch receipts');
+    return response.json();
+  },
+
+  async processReceipt(data: { qr_code: string; total_amount?: number; items: any[] }): Promise<any> {
+    const response = await fetch(API_BASE.receipts, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to process receipt');
     return response.json();
   },
 };

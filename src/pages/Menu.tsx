@@ -101,10 +101,18 @@ const Menu = () => {
             Назад
           </Button>
 
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-1">
-            Меню
-          </h1>
-          <p className="text-muted-foreground">Готовые блюда и рецепты</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-1">
+                Меню
+              </h1>
+              <p className="text-muted-foreground">Готовые блюда и рецепты</p>
+            </div>
+            <Button onClick={() => navigate('/recipe/new')} size="lg" className="shadow-lg">
+              <Icon name="Plus" size={20} className="mr-2" />
+              Создать рецепт
+            </Button>
+          </div>
         </motion.div>
 
         {isLoading ? (
@@ -206,7 +214,12 @@ const Menu = () => {
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {availableRecipes.map((recipe) => (
                     <Card key={recipe.id} className="p-6 bg-white/80 backdrop-blur-sm hover:shadow-lg transition-shadow">
-                      <h3 className="text-lg font-semibold mb-2">{recipe.name}</h3>
+                      <h3 
+                        className="text-lg font-semibold mb-2 cursor-pointer hover:text-primary transition-colors"
+                        onClick={() => navigate(`/recipe/${recipe.id}`)}
+                      >
+                        {recipe.name}
+                      </h3>
                       {recipe.description && (
                         <p className="text-sm text-muted-foreground mb-3">{recipe.description}</p>
                       )}
@@ -224,14 +237,23 @@ const Menu = () => {
                           {recipe.servings} порций
                         </div>
                       </div>
-                      <Button
-                        onClick={() => handlePlanRecipe(recipe.id)}
-                        className="w-full"
-                        size="sm"
-                      >
-                        <Icon name="CalendarPlus" size={16} className="mr-2" />
-                        Запланировать
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => handlePlanRecipe(recipe.id)}
+                          className="flex-1"
+                          size="sm"
+                        >
+                          <Icon name="CalendarPlus" size={16} className="mr-2" />
+                          Запланировать
+                        </Button>
+                        <Button
+                          onClick={() => navigate(`/recipe/${recipe.id}`)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Icon name="Eye" size={16} />
+                        </Button>
+                      </div>
                     </Card>
                   ))}
                 </div>

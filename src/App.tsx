@@ -11,6 +11,7 @@ import ShoppingList from "./pages/ShoppingList";
 import ScanReceipt from "./pages/ScanReceipt";
 import Budget from "./pages/Budget";
 import Menu from "./pages/Menu";
+import RecipeDetail from "./pages/RecipeDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/scan" element={<ScanReceipt />} />
           <Route path="/budget" element={<Budget />} />
           <Route path="/menu" element={<Menu />} />
+          <Route path="/recipe/:id" element={<RecipeDetail />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
