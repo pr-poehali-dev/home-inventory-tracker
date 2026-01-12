@@ -14,7 +14,7 @@ SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 'public')
 
 
 def handler(event: dict, context) -> dict:
-    '''API для управления бюджетом: доходы, расходы, категории и аналитика'''
+    '''API для управления бюджетом, аналитикой и настройками пользователя'''
     method = event.get('httpMethod', 'GET')
 
     if method == 'OPTIONS':
@@ -35,6 +35,37 @@ def handler(event: dict, context) -> dict:
     try:
         query_params = event.get('queryStringParameters', {}) or {}
         action = query_params.get('action')
+        
+        if action == 'settings':
+            if method == 'GET':
+                cur.execute(f"SELECT id, daily_calorie_goal FROM {SCHEMA}.user_settings LIMIT 1")
+                row = cur.fetchone()
+                if not row:
+                    cur.execute(f"INSERT INTO {SCHEMA}.user_settings (daily_calorie_goal) VALUES (2000) RETURNING id, daily_calorie_goal")
+                    row = cur.fetchone()
+                    conn.commit()
+                return {
+                    'statusCode': 200,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps(dict(row), default=str),
+                    'isBase64Encoded': False
+                }
+            elif method == 'PUT':
+                data = json.loads(event.get('body', '{}'))
+                cur.execute(f"""
+                    UPDATE {SCHEMA}.user_settings
+                    SET daily_calorie_goal = %s, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = (SELECT id FROM {SCHEMA}.user_settings LIMIT 1)
+                    RETURNING id, daily_calorie_goal
+                """, (data.get('daily_calorie_goal', 2000),))
+                row = cur.fetchone()
+                conn.commit()
+                return {
+                    'statusCode': 200,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps(dict(row), default=str),
+                    'isBase64Encoded': False
+                }
 
         if method == 'GET':
             if action == 'categories':

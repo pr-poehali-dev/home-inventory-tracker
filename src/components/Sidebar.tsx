@@ -22,6 +22,7 @@ const Sidebar = ({ locations }: SidebarProps) => {
     { path: '/shopping-list', icon: 'ShoppingCart', label: 'Список покупок' },
     { path: '/receipts', icon: 'Receipt', label: 'Чеки' },
     { path: '/budget', icon: 'Wallet', label: 'Бюджет' },
+    { path: '/product-catalog', icon: 'Book', label: 'Справочник товаров' },
     { path: '/scan', icon: 'QrCode', label: 'Сканировать' },
   ];
 

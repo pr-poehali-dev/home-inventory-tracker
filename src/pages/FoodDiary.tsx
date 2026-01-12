@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
-import { foodDiaryApi, FoodDiaryEntry, menuApi, PreparedMeal } from '@/lib/api';
+import { foodDiaryApi, FoodDiaryEntry, menuApi, PreparedMeal, settingsApi } from '@/lib/api';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 export const FoodDiary = () => {
   const [entries, setEntries] = useState<FoodDiaryEntry[]>([]);
   const [totalCalories, setTotalCalories] = useState(0);
+  const [dailyGoal, setDailyGoal] = useState(2000);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [preparedMeals, setPreparedMeals] = useState<PreparedMeal[]>([]);
@@ -33,12 +34,16 @@ export const FoodDiary = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const data = await foodDiaryApi.getTodayEntries();
-      setEntries(data.entries);
-      setTotalCalories(data.total_calories);
-
-      const meals = await menuApi.getPreparedMeals();
+      const [diaryData, meals, settings] = await Promise.all([
+        foodDiaryApi.getTodayEntries(),
+        menuApi.getPreparedMeals(),
+        settingsApi.getSettings(),
+      ]);
+      
+      setEntries(diaryData.entries);
+      setTotalCalories(diaryData.total_calories);
       setPreparedMeals(meals);
+      setDailyGoal(settings.daily_calorie_goal);
     } catch (error) {
       toast.error('Ошибка загрузки дневника');
       console.error(error);
@@ -137,15 +142,47 @@ export const FoodDiary = () => {
         </div>
 
         <Card className="p-6 bg-white/80 backdrop-blur-sm mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
-                <Icon name="Flame" size={24} className="text-white" />
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
+                  <Icon name="Flame" size={24} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Калории за сегодня</p>
+                  <p className="text-3xl font-bold">
+                    {Math.round(totalCalories)} <span className="text-lg text-muted-foreground">/ {dailyGoal}</span>
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Всего за сегодня</p>
-                <p className="text-3xl font-bold">{Math.round(totalCalories)} ккал</p>
+            </div>
+            <div className="mt-4">
+              <div className="flex items-center justify-between text-sm mb-2">
+                <span className="text-muted-foreground">Прогресс</span>
+                <span className={`font-medium ${totalCalories > dailyGoal ? 'text-red-600' : 'text-green-600'}`}>
+                  {Math.round((totalCalories / dailyGoal) * 100)}%
+                </span>
               </div>
+              <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all rounded-full ${
+                    totalCalories > dailyGoal 
+                      ? 'bg-gradient-to-r from-orange-500 to-red-600' 
+                      : 'bg-gradient-to-r from-green-500 to-emerald-600'
+                  }`}
+                  style={{ width: `${Math.min((totalCalories / dailyGoal) * 100, 100)}%` }}
+                />
+              </div>
+              {totalCalories > dailyGoal && (
+                <p className="text-xs text-red-600 mt-2">
+                  Превышение на {Math.round(totalCalories - dailyGoal)} ккал
+                </p>
+              )}
+              {totalCalories < dailyGoal && (
+                <p className="text-xs text-green-600 mt-2">
+                  Осталось {Math.round(dailyGoal - totalCalories)} ккал
+                </p>
+              )}
             </div>
           </div>
         </Card>

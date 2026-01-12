@@ -8,7 +8,7 @@ SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 'public')
 
 
 def handler(event: dict, context) -> dict:
-    '''API для управления местами хранения и продуктами'''
+    '''API для управления местами хранения, продуктами и справочником товаров'''
     method = event.get('httpMethod', 'GET')
 
     if method == 'OPTIONS':
@@ -29,6 +29,74 @@ def handler(event: dict, context) -> dict:
     try:
         query_params = event.get('queryStringParameters', {}) or {}
         action = query_params.get('action')
+        
+        if action == 'catalog':
+            if method == 'GET':
+                cur.execute(f"""
+                    SELECT id, name, category, calories_per_100g, default_unit, created_at
+                    FROM {SCHEMA}.product_catalog
+                    ORDER BY name
+                """)
+                products = cur.fetchall()
+                return {
+                    'statusCode': 200,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps([dict(p) for p in products], default=str),
+                    'isBase64Encoded': False
+                }
+            
+            elif method == 'POST':
+                data = json.loads(event.get('body', '{}'))
+                cur.execute(f"""
+                    INSERT INTO {SCHEMA}.product_catalog 
+                    (name, category, calories_per_100g, default_unit)
+                    VALUES (%s, %s, %s, %s)
+                    ON CONFLICT (name) DO UPDATE SET
+                        category = EXCLUDED.category,
+                        calories_per_100g = EXCLUDED.calories_per_100g,
+                        default_unit = EXCLUDED.default_unit,
+                        updated_at = CURRENT_TIMESTAMP
+                    RETURNING *
+                """, (data.get('name'), data.get('category'), 
+                      data.get('calories_per_100g'), data.get('default_unit', 'г')))
+                product = cur.fetchone()
+                conn.commit()
+                return {
+                    'statusCode': 200,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps(dict(product), default=str),
+                    'isBase64Encoded': False
+                }
+            
+            elif method == 'PUT':
+                data = json.loads(event.get('body', '{}'))
+                cur.execute(f"""
+                    UPDATE {SCHEMA}.product_catalog
+                    SET name = %s, category = %s, calories_per_100g = %s, 
+                        default_unit = %s, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = %s
+                    RETURNING *
+                """, (data.get('name'), data.get('category'), 
+                      data.get('calories_per_100g'), data.get('default_unit'), data.get('id')))
+                product = cur.fetchone()
+                conn.commit()
+                return {
+                    'statusCode': 200,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps(dict(product), default=str),
+                    'isBase64Encoded': False
+                }
+            
+            elif method == 'DELETE':
+                product_id = query_params.get('id')
+                cur.execute(f"DELETE FROM {SCHEMA}.product_catalog WHERE id = %s", (product_id,))
+                conn.commit()
+                return {
+                    'statusCode': 200,
+                    'headers': {'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'success': True}),
+                    'isBase64Encoded': False
+                }
 
         if method == 'GET':
             location_id = query_params.get('id')

@@ -74,6 +74,23 @@ def handler(event: dict, context) -> dict:
                 category_id = expense_categories.get(category_name.lower(), default_category_id)
                 
                 cur.execute(
+                    f'''SELECT id, calories_per_100g FROM {SCHEMA}.product_catalog 
+                        WHERE LOWER(TRIM(name)) = LOWER(TRIM(%s))
+                        LIMIT 1''',
+                    (item_name,)
+                )
+                catalog_item = cur.fetchone()
+                
+                if not catalog_item:
+                    cur.execute(
+                        f'''INSERT INTO {SCHEMA}.product_catalog (name, category, default_unit)
+                            VALUES (%s, %s, 'г')
+                            RETURNING id, calories_per_100g''',
+                        (item_name, category_name)
+                    )
+                    catalog_item = cur.fetchone()
+                
+                cur.execute(
                     f'''INSERT INTO {SCHEMA}.receipt_items 
                         (receipt_id, name, quantity, price, total, budget_category_name, category_id)
                         VALUES (%s, %s, %s, %s, %s, %s, %s)''',

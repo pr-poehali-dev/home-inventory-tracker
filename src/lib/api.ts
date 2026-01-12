@@ -418,3 +418,81 @@ export const receiptsApi = {
     return response.json();
   },
 };
+
+export interface UserSettings {
+  id: string;
+  daily_calorie_goal: number;
+}
+
+export const settingsApi = {
+  async getSettings(): Promise<UserSettings> {
+    const response = await fetch(`${API_BASE.budget}?action=settings`);
+    if (!response.ok) throw new Error('Failed to fetch settings');
+    return response.json();
+  },
+
+  async updateSettings(data: { daily_calorie_goal: number }): Promise<UserSettings> {
+    const response = await fetch(`${API_BASE.budget}?action=settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to update settings');
+    return response.json();
+  },
+};
+
+export interface ProductCatalog {
+  id: string;
+  name: string;
+  category?: string;
+  calories_per_100g?: number;
+  default_unit: string;
+  created_at: string;
+}
+
+export const catalogApi = {
+  async getProducts(): Promise<ProductCatalog[]> {
+    const response = await fetch(`${API_BASE.storage}?action=catalog`);
+    if (!response.ok) throw new Error('Failed to fetch catalog');
+    return response.json();
+  },
+
+  async createProduct(data: {
+    name: string;
+    category?: string;
+    calories_per_100g?: number;
+    default_unit?: string;
+  }): Promise<ProductCatalog> {
+    const response = await fetch(`${API_BASE.storage}?action=catalog`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to create product');
+    return response.json();
+  },
+
+  async updateProduct(data: {
+    id: string;
+    name: string;
+    category?: string;
+    calories_per_100g?: number;
+    default_unit?: string;
+  }): Promise<ProductCatalog> {
+    const response = await fetch(`${API_BASE.storage}?action=catalog`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to update product');
+    return response.json();
+  },
+
+  async deleteProduct(id: string): Promise<void> {
+    const response = await fetch(`${API_BASE.storage}?action=catalog&id=${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete product');
+  },
+};
