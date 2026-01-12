@@ -3,20 +3,27 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import Icon from '@/components/ui/icon';
-import { storageApi, StorageLocation } from '@/lib/api';
+import { storageApi, shoppingApi, StorageLocation, ShoppingItem } from '@/lib/api';
 import { toast } from 'sonner';
 
 const Index = () => {
   const navigate = useNavigate();
   const [locations, setLocations] = useState<StorageLocation[]>([]);
+  const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchLocations = async () => {
+    const fetchData = async () => {
       try {
-        const data = await storageApi.getLocations();
-        setLocations(data);
+        const [locationsData, shoppingData] = await Promise.all([
+          storageApi.getLocations(),
+          shoppingApi.getItems()
+        ]);
+        setLocations(locationsData);
+        setShoppingItems(shoppingData);
       } catch (error) {
         toast.error('Ошибка загрузки данных');
         console.error(error);
@@ -25,8 +32,27 @@ const Index = () => {
       }
     };
 
-    fetchLocations();
+    fetchData();
   }, []);
+
+  const toggleShoppingItem = async (id: string) => {
+    const item = shoppingItems.find((i) => i.id === id);
+    if (!item) return;
+
+    try {
+      await shoppingApi.toggleItem(id, !item.is_purchased);
+      setShoppingItems((prev) =>
+        prev.map((i) =>
+          i.id === id ? { ...i, is_purchased: !i.is_purchased } : i
+        )
+      );
+    } catch (error) {
+      toast.error('Ошибка обновления');
+      console.error(error);
+    }
+  };
+
+  const unpurchasedItems = shoppingItems.filter((item) => !item.is_purchased);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -64,13 +90,66 @@ const Index = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           </div>
         ) : (
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="show"
-            className="grid gap-4 md:grid-cols-2 mb-6"
-          >
-            {locations.map((location) => (
+          <>
+            {unpurchasedItems.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-6"
+              >
+                <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+                  <div className="p-4 border-b">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-xl font-semibold flex items-center gap-2">
+                        <Icon name="ShoppingCart" size={24} className="text-primary" />
+                        Список покупок
+                      </h2>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate('/shopping-list')}
+                      >
+                        Все
+                        <Icon name="ChevronRight" size={16} className="ml-1" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="p-4 space-y-2 max-h-[300px] overflow-y-auto">
+                    {unpurchasedItems.slice(0, 5).map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        <Checkbox
+                          checked={item.is_purchased}
+                          onCheckedChange={() => toggleShoppingItem(item.id)}
+                          className="w-5 h-5"
+                        />
+                        <div className="flex-1">
+                          <span className="font-medium">{item.name}</span>
+                          <span className="text-sm text-muted-foreground ml-2">
+                            {item.quantity} {item.unit}
+                          </span>
+                        </div>
+                        {item.category && (
+                          <Badge variant="outline" className="text-xs">
+                            {item.category}
+                          </Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </motion.div>
+            )}
+
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="show"
+              className="grid gap-4 md:grid-cols-2 mb-6"
+            >
+              {locations.map((location) => (
             <motion.div key={location.id} variants={itemVariants}>
               <Card
                 className="p-6 cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-white/80 backdrop-blur-sm border-2 hover:border-primary"
@@ -92,33 +171,34 @@ const Index = () => {
                 </div>
               </Card>
             </motion.div>
-          ))}
-          </motion.div>
-        )}
+              ))}
+            </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="flex gap-3"
-        >
-          <Button
-            onClick={() => navigate('/shopping-list')}
-            size="lg"
-            className="flex-1 text-lg h-16 bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity shadow-lg"
-          >
-            <Icon name="ShoppingCart" size={24} className="mr-2" />
-            Список покупок
-          </Button>
-          <Button
-            onClick={() => navigate('/scan')}
-            size="lg"
-            variant="outline"
-            className="h-16 px-6 border-2 hover:bg-accent/10 hover:border-accent transition-all"
-          >
-            <Icon name="QrCode" size={28} />
-          </Button>
-        </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="flex gap-3"
+            >
+              <Button
+                onClick={() => navigate('/receipts')}
+                size="lg"
+                variant="outline"
+                className="flex-1 text-lg h-16 border-2 hover:bg-primary/10 hover:border-primary transition-all"
+              >
+                <Icon name="Receipt" size={24} className="mr-2" />
+                Чеки
+              </Button>
+              <Button
+                onClick={() => navigate('/scan')}
+                size="lg"
+                className="h-16 px-6 bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-lg"
+              >
+                <Icon name="QrCode" size={28} />
+              </Button>
+            </motion.div>
+          </>
+        )}
       </div>
     </div>
   );

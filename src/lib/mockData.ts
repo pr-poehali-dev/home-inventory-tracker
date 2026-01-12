@@ -12,7 +12,7 @@ export const mockStorageLocations: StorageLocation[] = [
     id: '2',
     name: 'Кухонный шкаф',
     icon: 'ChefHat',
-    color: 'bg-purple-500',
+    color: 'bg-green-500',
     itemsCount: 22,
   },
   {
