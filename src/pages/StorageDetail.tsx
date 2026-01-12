@@ -8,6 +8,7 @@ import Icon from '@/components/ui/icon';
 import Sidebar from '@/components/Sidebar';
 import { storageApi, StorageLocation, Product } from '@/lib/api';
 import { AddProductDialog } from '@/components/AddProductDialog';
+import { EditProductDialog } from '@/components/EditProductDialog';
 import { ProductCard } from '@/components/ProductCard';
 import { toast } from 'sonner';
 
@@ -15,6 +16,8 @@ const StorageDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [location, setLocation] = useState<StorageLocation | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [locations, setLocations] = useState<StorageLocation[]>([]);
@@ -57,6 +60,11 @@ const StorageDetail = () => {
       toast.error('Ошибка удаления');
       console.error(error);
     }
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setSelectedProduct(product);
+    setIsEditDialogOpen(true);
   };
 
   if (isLoading) {
@@ -129,7 +137,11 @@ const StorageDetail = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.05 }}
             >
-              <ProductCard product={product} onDelete={handleDeleteProduct} />
+              <ProductCard 
+                product={product} 
+                onDelete={handleDeleteProduct}
+                onEdit={handleEditProduct}
+              />
             </motion.div>
           ))}
 
@@ -167,6 +179,13 @@ const StorageDetail = () => {
           onOpenChange={setIsAddDialogOpen}
           storageLocationId={id || ''}
           onProductAdded={fetchData}
+        />
+
+        <EditProductDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          product={selectedProduct}
+          onProductUpdated={fetchData}
         />
       </div>
     </div>

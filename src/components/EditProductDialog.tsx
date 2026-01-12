@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,21 +12,21 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Icon from '@/components/ui/icon';
 import { toast } from 'sonner';
-import { storageApi } from '@/lib/api';
+import { storageApi, Product } from '@/lib/api';
 
-interface AddProductDialogProps {
+interface EditProductDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  storageLocationId: string;
-  onProductAdded?: () => void;
+  product: Product | null;
+  onProductUpdated?: () => void;
 }
 
-export const AddProductDialog = ({
+export const EditProductDialog = ({
   open,
   onOpenChange,
-  storageLocationId,
-  onProductAdded,
-}: AddProductDialogProps) => {
+  product,
+  onProductUpdated,
+}: EditProductDialogProps) => {
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState('');
   const [unit, setUnit] = useState('шт');
@@ -36,57 +36,54 @@ export const AddProductDialog = ({
   const [caloriesPer100g, setCaloriesPer100g] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (product) {
+      setName(product.name);
+      setQuantity(String(product.quantity));
+      setUnit(product.unit);
+      setCategory(product.category || '');
+      setExpiryDate(product.expiry_date ? product.expiry_date.split('T')[0] : '');
+      setNotes(product.notes || '');
+      setCaloriesPer100g(product.calories_per_100g ? String(product.calories_per_100g) : '');
+    }
+  }, [product]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name || !quantity) {
+    if (!name || !quantity || !product) {
       toast.error('Заполните обязательные поля');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await storageApi.addProduct({
+      await storageApi.updateProduct(product.id, {
         name,
         quantity: parseFloat(quantity),
         unit,
         category: category || undefined,
         expiryDate: expiryDate || undefined,
-        storageLocationId,
         notes: notes || undefined,
         caloriesPer100g: caloriesPer100g ? parseInt(caloriesPer100g) : undefined,
       });
-      
-      toast.success(`Товар "${name}" добавлен`);
+
+      toast.success('Продукт обновлен');
+      onProductUpdated?.();
       onOpenChange(false);
-      resetForm();
-      onProductAdded?.();
     } catch (error) {
-      toast.error('Ошибка добавления товара');
+      toast.error('Ошибка обновления продукта');
       console.error(error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const resetForm = () => {
-    setName('');
-    setQuantity('');
-    setUnit('шт');
-    setCategory('');
-    setExpiryDate('');
-    setNotes('');
-    setCaloriesPer100g('');
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Icon name="Package" size={24} />
-            Добавить товар
-          </DialogTitle>
+          <DialogTitle>Редактировать продукт</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -96,7 +93,7 @@ export const AddProductDialog = ({
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Молоко, хлеб..."
+              placeholder="Молоко"
               required
             />
           </div>
@@ -107,7 +104,7 @@ export const AddProductDialog = ({
               <Input
                 id="quantity"
                 type="number"
-                step="0.1"
+                step="0.01"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
                 placeholder="1"
@@ -131,7 +128,7 @@ export const AddProductDialog = ({
               id="category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              placeholder="Молочные, овощи..."
+              placeholder="Молочные продукты"
             />
           </div>
 
@@ -162,18 +159,32 @@ export const AddProductDialog = ({
               id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Дополнительная информация..."
+              placeholder="Дополнительная информация"
               rows={2}
             />
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
               Отмена
             </Button>
-            <Button type="submit" className="bg-gradient-to-r from-primary to-secondary" disabled={isSubmitting}>
-              <Icon name="Plus" size={18} className="mr-2" />
-              {isSubmitting ? 'Добавление...' : 'Добавить'}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Icon name="Loader2" size={16} className="mr-2 animate-spin" />
+                  Сохранение...
+                </>
+              ) : (
+                <>
+                  <Icon name="Save" size={16} className="mr-2" />
+                  Сохранить
+                </>
+              )}
             </Button>
           </DialogFooter>
         </form>

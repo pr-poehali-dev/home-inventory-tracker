@@ -95,8 +95,8 @@ def handler(event: dict, context) -> dict:
 
             cur.execute(
                 f'''INSERT INTO {SCHEMA}.products 
-                    (name, quantity, unit, category, expiry_date, storage_location_id, notes)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    (name, quantity, unit, category, expiry_date, storage_location_id, notes, calories_per_100g)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                     RETURNING *''',
                 (
                     body.get('name'),
@@ -105,7 +105,8 @@ def handler(event: dict, context) -> dict:
                     body.get('category'),
                     body.get('expiryDate'),
                     body.get('storageLocationId'),
-                    body.get('notes')
+                    body.get('notes'),
+                    body.get('caloriesPer100g')
                 )
             )
             product = cur.fetchone()
@@ -122,6 +123,36 @@ def handler(event: dict, context) -> dict:
             }
 
         elif method == 'PUT':
+            if action == 'updateProduct':
+                product_id = query_params.get('id')
+                body = json.loads(event.get('body', '{}'))
+
+                cur.execute(
+                    f'''UPDATE {SCHEMA}.products 
+                        SET name = %s, quantity = %s, unit = %s, category = %s, 
+                            expiry_date = %s, notes = %s, calories_per_100g = %s
+                        WHERE id = %s RETURNING *''',
+                    (
+                        body.get('name'),
+                        body.get('quantity'),
+                        body.get('unit'),
+                        body.get('category'),
+                        body.get('expiryDate'),
+                        body.get('notes'),
+                        body.get('caloriesPer100g'),
+                        product_id
+                    )
+                )
+                product = cur.fetchone()
+                conn.commit()
+
+                return {
+                    'statusCode': 200,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps(dict(product) if product else {}, default=str),
+                    'isBase64Encoded': False
+                }
+
             if action == 'updateLocation':
                 location_id = query_params.get('id')
                 body = json.loads(event.get('body', '{}'))
@@ -165,27 +196,13 @@ def handler(event: dict, context) -> dict:
                     'isBase64Encoded': False
                 }
 
-            cur.execute(f'SELECT * FROM {SCHEMA}.products WHERE id = %s', (product_id,))
-            product = cur.fetchone()
-
-            if not product:
-                return {
-                    'statusCode': 404,
-                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'Product not found'}),
-                    'isBase64Encoded': False
-                }
-
-            cur.execute(f'UPDATE {SCHEMA}.products SET quantity = 0 WHERE id = %s', (product_id,))
+            cur.execute(f'DELETE FROM {SCHEMA}.products WHERE id = %s', (product_id,))
             conn.commit()
 
             return {
-                'statusCode': 200,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'body': json.dumps({'success': True}),
+                'statusCode': 204,
+                'headers': {'Access-Control-Allow-Origin': '*'},
+                'body': '',
                 'isBase64Encoded': False
             }
 

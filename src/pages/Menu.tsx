@@ -168,14 +168,29 @@ const Menu = () => {
                           </Button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Icon name="Flame" size={16} />
-                          {meal.total_calories || 0} ккал
+                      <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-1">
+                            <Icon name="Flame" size={16} />
+                            {Math.round(meal.total_calories || 0)} ккал
+                            {meal.total_weight && (
+                              <span className="text-xs ml-1">
+                                ({Math.round((meal.total_calories || 0) / (meal.servings_left || 1))} ккал/порция)
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Icon name="Calendar" size={16} />
-                          {new Date(meal.prepared_date).toLocaleDateString('ru')}
+                        <div className="flex items-center gap-4">
+                          {meal.total_weight && (
+                            <div className="flex items-center gap-1">
+                              <Icon name="Weight" size={16} />
+                              {Math.round(meal.total_weight)} г
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1">
+                            <Icon name="Calendar" size={16} />
+                            {new Date(meal.prepared_date).toLocaleDateString('ru')}
+                          </div>
                         </div>
                       </div>
                     </Card>

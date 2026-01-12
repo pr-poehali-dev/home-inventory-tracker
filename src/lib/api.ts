@@ -26,6 +26,7 @@ export interface Product {
   added_date: string;
   notes?: string;
   created_at: string;
+  calories_per_100g?: number;
 }
 
 export interface ShoppingItem {
@@ -88,6 +89,7 @@ export const storageApi = {
     expiryDate?: string;
     storageLocationId: string;
     notes?: string;
+    caloriesPer100g?: number;
   }): Promise<Product> {
     const response = await fetch(API_BASE.storage, {
       method: 'POST',
@@ -103,6 +105,24 @@ export const storageApi = {
       method: 'DELETE',
     });
     if (!response.ok) throw new Error('Failed to delete product');
+  },
+
+  async updateProduct(id: string, data: {
+    name: string;
+    quantity: number;
+    unit: string;
+    category?: string;
+    expiryDate?: string;
+    notes?: string;
+    caloriesPer100g?: number;
+  }): Promise<Product> {
+    const response = await fetch(`${API_BASE.storage}?action=updateProduct&id=${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to update product');
+    return response.json();
   },
 };
 
@@ -234,6 +254,7 @@ export interface PreparedMeal {
   recipe_id: string;
   recipe_name: string;
   total_calories?: number;
+  total_weight?: number;
   image_url?: string;
   prepared_date: string;
   servings_left: number;

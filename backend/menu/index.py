@@ -67,7 +67,7 @@ def handler(event: dict, context) -> dict:
         if method == 'GET':
             if action == 'prepared_meals':
                 cur.execute(
-                    f'''SELECT pm.*, r.name as recipe_name, r.total_calories, r.image_url
+                    f'''SELECT pm.*, r.name as recipe_name, r.image_url
                         FROM {SCHEMA}.prepared_meals pm
                         JOIN {SCHEMA}.recipes r ON pm.recipe_id = r.id
                         WHERE pm.status = 'available'
@@ -215,6 +215,9 @@ def handler(event: dict, context) -> dict:
                 cur.execute(f'SELECT * FROM {SCHEMA}.products WHERE quantity > 0')
                 available_products = cur.fetchall()
                 
+                total_calories = 0
+                total_weight = 0
+                
                 for ingredient in ingredients:
                     matched_product = find_matching_product(
                         ingredient['product_name'],
@@ -227,11 +230,25 @@ def handler(event: dict, context) -> dict:
                             f'UPDATE {SCHEMA}.products SET quantity = %s WHERE id = %s',
                             (new_qty, matched_product['id'])
                         )
+                        
+                        if matched_product.get('calories_per_100g'):
+                            ingredient_weight_g = float(ingredient['quantity'])
+                            if ingredient['unit'] == 'кг':
+                                ingredient_weight_g *= 1000
+                            elif ingredient['unit'] == 'мл':
+                                pass
+                            elif ingredient['unit'] == 'л':
+                                ingredient_weight_g *= 1000
+                            
+                            calories = (float(matched_product['calories_per_100g']) * ingredient_weight_g) / 100
+                            total_calories += calories
+                            total_weight += ingredient_weight_g
                 
                 cur.execute(
-                    f'''INSERT INTO {SCHEMA}.prepared_meals (recipe_id, servings_left, status)
-                        VALUES (%s, %s, 'available') RETURNING *''',
-                    (planned['recipe_id'], planned['servings'])
+                    f'''INSERT INTO {SCHEMA}.prepared_meals 
+                        (recipe_id, servings_left, status, total_calories, total_weight)
+                        VALUES (%s, %s, 'available', %s, %s) RETURNING *''',
+                    (planned['recipe_id'], planned['servings'], total_calories, total_weight)
                 )
                 meal = cur.fetchone()
                 

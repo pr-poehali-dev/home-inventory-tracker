@@ -7,9 +7,10 @@ import { Product } from '@/lib/api';
 interface ProductCardProps {
   product: Product;
   onDelete?: (id: string) => void;
+  onEdit?: (product: Product) => void;
 }
 
-export const ProductCard = ({ product, onDelete }: ProductCardProps) => {
+export const ProductCard = ({ product, onDelete, onEdit }: ProductCardProps) => {
   const isExpiringSoon = product.expiry_date
     ? new Date(product.expiry_date) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     : false;
@@ -56,6 +57,12 @@ export const ProductCard = ({ product, onDelete }: ProductCardProps) => {
           {product.notes && (
             <p className="text-sm text-muted-foreground">{product.notes}</p>
           )}
+          {product.calories_per_100g && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+              <Icon name="Flame" size={12} />
+              <span>{product.calories_per_100g} ккал/100г</span>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col gap-2">
@@ -69,16 +76,28 @@ export const ProductCard = ({ product, onDelete }: ProductCardProps) => {
               Скоро истечёт
             </Badge>
           )}
-          {onDelete && (
-            <Button
-              onClick={() => onDelete(product.id)}
-              size="sm"
-              variant="ghost"
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              <Icon name="Trash2" size={16} />
-            </Button>
-          )}
+          <div className="flex gap-1">
+            {onEdit && (
+              <Button
+                onClick={() => onEdit(product)}
+                size="sm"
+                variant="ghost"
+                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              >
+                <Icon name="Pencil" size={16} />
+              </Button>
+            )}
+            {onDelete && (
+              <Button
+                onClick={() => onDelete(product.id)}
+                size="sm"
+                variant="ghost"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <Icon name="Trash2" size={16} />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </Card>
