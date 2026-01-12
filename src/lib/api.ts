@@ -315,6 +315,42 @@ export const foodDiaryApi = {
   },
 };
 
+export interface Receipt {
+  id: string;
+  qr_code: string;
+  total_amount: number;
+  status: string;
+  created_at: string;
+}
+
+export const receiptApi = {
+  async processReceipt(data: { 
+    qr_code: string; 
+    total_amount: number; 
+    items: Array<{ 
+      name: string; 
+      price: number; 
+      quantity: number; 
+      total: number;
+      budget_category_name?: string;
+    }> 
+  }): Promise<{ receipt: Receipt; total_amount: number; items_count: number }> {
+    const response = await fetch(API_BASE.receipts, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to process receipt');
+    return response.json();
+  },
+
+  async getReceipts(): Promise<Receipt[]> {
+    const response = await fetch(API_BASE.receipts);
+    if (!response.ok) throw new Error('Failed to fetch receipts');
+    return response.json();
+  },
+};
+
 export const menuApi = {
   async getRecipes(): Promise<Recipe[]> {
     const response = await fetch(API_BASE.menu);

@@ -5,13 +5,64 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import Sidebar from '@/components/Sidebar';
-import { storageApi, StorageLocation } from '@/lib/api';
+import { storageApi, StorageLocation, receiptApi } from '@/lib/api';
 import { toast } from 'sonner';
 import { Html5QrcodeScanner, Html5QrcodeScannerState } from 'html5-qrcode';
+
+interface QRParams {
+  t: string;
+  s: string;
+  fn: string;
+  i: string;
+  fp: string;
+  n: string;
+}
+
+const parseQRCode = (qrText: string): QRParams | null => {
+  try {
+    const url = new URL(qrText);
+    const params = new URLSearchParams(url.search);
+    
+    const t = params.get('t');
+    const s = params.get('s');
+    const fn = params.get('fn');
+    const i = params.get('i');
+    const fp = params.get('fp');
+    const n = params.get('n');
+    
+    if (!t || !s || !fn || !i || !fp || !n) return null;
+    
+    return { t, s, fn, i, fp, n };
+  } catch {
+    return null;
+  }
+};
+
+const fetchReceiptFromFNS = async (params: QRParams): Promise<any> => {
+  const fnsUrl = `https://proverkacheka.com/api/v1/check/get`;
+  
+  const response = await fetch(fnsUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      qrraw: `t=${params.t}&s=${params.s}&fn=${params.fn}&i=${params.i}&fp=${params.fp}&n=${params.n}`
+    })
+  });
+  
+  if (!response.ok) {
+    throw new Error('Failed to fetch receipt from FNS');
+  }
+  
+  const data = await response.json();
+  return data.data.json;
+};
 
 const ScanReceipt = () => {
   const navigate = useNavigate();
   const [isScanning, setIsScanning] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [locations, setLocations] = useState<StorageLocation[]>([]);
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
   const scannerDivRef = useRef<HTMLDivElement>(null);
@@ -67,14 +118,51 @@ const ScanReceipt = () => {
       scannerRef.current = scanner;
 
       scanner.render(
-        (decodedText) => {
-          toast.success('QR-код успешно отсканирован!');
+        async (decodedText) => {
           console.log('Scanned:', decodedText);
           
           scanner.clear().catch(console.error);
           setIsScanning(false);
+          setIsProcessing(true);
           
-          setTimeout(() => navigate('/'), 500);
+          try {
+            const qrParams = parseQRCode(decodedText);
+            
+            if (!qrParams) {
+              toast.error('Неверный формат QR-кода');
+              setIsProcessing(false);
+              return;
+            }
+            
+            toast.loading('Получаем данные чека из ФНС...');
+            
+            const receiptData = await fetchReceiptFromFNS(qrParams);
+            
+            if (!receiptData || !receiptData.items || receiptData.items.length === 0) {
+              toast.error('Не удалось получить данные чека');
+              setIsProcessing(false);
+              return;
+            }
+            
+            await receiptApi.processReceipt({
+              qr_code: decodedText,
+              total_amount: receiptData.totalSum / 100,
+              items: receiptData.items.map((item: any) => ({
+                name: item.name,
+                price: item.price / 100,
+                quantity: item.quantity,
+                total: item.sum / 100,
+                budget_category_name: 'Продукты'
+              }))
+            });
+            
+            toast.success(`Чек добавлен! ${receiptData.items.length} товаров на сумму ${(receiptData.totalSum / 100).toFixed(2)} ₽`);
+            setTimeout(() => navigate('/budget'), 500);
+          } catch (error) {
+            console.error('Receipt processing error:', error);
+            toast.error('Ошибка обработки чека');
+            setIsProcessing(false);
+          }
         },
         (error) => {
           console.warn('QR scan error:', error);
@@ -135,7 +223,15 @@ const ScanReceipt = () => {
           transition={{ delay: 0.2 }}
         >
           <Card className="p-8 bg-white/80 backdrop-blur-sm text-center">
-            {isScanning ? (
+            {isProcessing ? (
+              <div className="space-y-4">
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+                  <p className="text-lg font-medium">Обрабатываем чек...</p>
+                  <p className="text-muted-foreground">Получаем данные из ФНС</p>
+                </div>
+              </div>
+            ) : isScanning ? (
               <div className="space-y-4">
                 <div id="qr-reader" ref={scannerDivRef} className="w-full"></div>
                 <Button
