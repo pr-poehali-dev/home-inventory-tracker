@@ -19,6 +19,7 @@ const Sidebar = ({ locations }: SidebarProps) => {
     { path: '/', icon: 'Home', label: 'Главная' },
     { path: '/shopping-list', icon: 'ShoppingCart', label: 'Список покупок' },
     { path: '/receipts', icon: 'Receipt', label: 'Чеки' },
+    { path: '/budget', icon: 'Wallet', label: 'Бюджет' },
     { path: '/scan', icon: 'QrCode', label: 'Сканировать' },
   ];
 
@@ -108,6 +109,17 @@ const Sidebar = ({ locations }: SidebarProps) => {
                           className="overflow-hidden"
                         >
                           <div className="space-y-1 pl-4">
+                            <Button
+                              variant="ghost"
+                              className="w-full justify-start text-sm h-10 mb-2"
+                              onClick={() => {
+                                navigate('/storage-management');
+                                setIsOpen(false);
+                              }}
+                            >
+                              <Icon name="Settings" size={16} className="mr-2" />
+                              Управление местами
+                            </Button>
                             {locations.map((loc) => (
                               <Button
                                 key={loc.id}

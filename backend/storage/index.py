@@ -27,9 +27,11 @@ def handler(event: dict, context) -> dict:
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
     try:
+        query_params = event.get('queryStringParameters', {}) or {}
+        action = query_params.get('action')
+
         if method == 'GET':
-            path = event.get('pathParams', {})
-            location_id = path.get('id')
+            location_id = query_params.get('id')
 
             if location_id:
                 cur.execute(
@@ -75,6 +77,22 @@ def handler(event: dict, context) -> dict:
         elif method == 'POST':
             body = json.loads(event.get('body', '{}'))
 
+            if action == 'createLocation':
+                cur.execute(
+                    f'''INSERT INTO {SCHEMA}.storage_locations (name, icon, color)
+                        VALUES (%s, %s, %s) RETURNING *''',
+                    (body.get('name'), body.get('icon'), body.get('color'))
+                )
+                location = cur.fetchone()
+                conn.commit()
+
+                return {
+                    'statusCode': 201,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps(dict(location), default=str),
+                    'isBase64Encoded': False
+                }
+
             cur.execute(
                 f'''INSERT INTO {SCHEMA}.products 
                     (name, quantity, unit, category, expiry_date, storage_location_id, notes)
@@ -103,9 +121,41 @@ def handler(event: dict, context) -> dict:
                 'isBase64Encoded': False
             }
 
+        elif method == 'PUT':
+            if action == 'updateLocation':
+                location_id = query_params.get('id')
+                body = json.loads(event.get('body', '{}'))
+
+                cur.execute(
+                    f'''UPDATE {SCHEMA}.storage_locations 
+                        SET name = %s, icon = %s, color = %s 
+                        WHERE id = %s RETURNING *''',
+                    (body.get('name'), body.get('icon'), body.get('color'), location_id)
+                )
+                location = cur.fetchone()
+                conn.commit()
+
+                return {
+                    'statusCode': 200,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps(dict(location) if location else {}, default=str),
+                    'isBase64Encoded': False
+                }
+
         elif method == 'DELETE':
-            path = event.get('pathParams', {})
-            product_id = path.get('productId')
+            if action == 'deleteLocation':
+                location_id = query_params.get('id')
+                cur.execute(f'DELETE FROM {SCHEMA}.storage_locations WHERE id = %s', (location_id,))
+                conn.commit()
+
+                return {
+                    'statusCode': 200,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'success': True}),
+                    'isBase64Encoded': False
+                }
+
+            product_id = query_params.get('productId')
 
             if not product_id:
                 return {

@@ -1,6 +1,7 @@
 const API_BASE = {
   storage: 'https://functions.poehali.dev/575d5adf-f1ad-4840-8e0a-2ffd7b4bef19',
   shopping: 'https://functions.poehali.dev/b6020faf-a0aa-4f1e-8d41-3ddab94980f8',
+  budget: 'https://functions.poehali.dev/1a040252-43be-4273-a42d-37e30c769d98',
 };
 
 export interface StorageLocation {
@@ -48,6 +49,33 @@ export const storageApi = {
     const response = await fetch(`${API_BASE.storage}?id=${id}`);
     if (!response.ok) throw new Error('Failed to fetch location details');
     return response.json();
+  },
+
+  async createLocation(data: { name: string; icon: string; color: string }): Promise<StorageLocation> {
+    const response = await fetch(`${API_BASE.storage}?action=createLocation`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to create location');
+    return response.json();
+  },
+
+  async updateLocation(id: string, data: { name: string; icon: string; color: string }): Promise<StorageLocation> {
+    const response = await fetch(`${API_BASE.storage}?action=updateLocation&id=${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to update location');
+    return response.json();
+  },
+
+  async deleteLocation(id: string): Promise<void> {
+    const response = await fetch(`${API_BASE.storage}?action=deleteLocation&id=${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete location');
   },
 
   async addProduct(data: {
@@ -106,6 +134,62 @@ export const shoppingApi = {
       body: JSON.stringify({ isPurchased }),
     });
     if (!response.ok) throw new Error('Failed to update item');
+    return response.json();
+  },
+};
+
+export interface BudgetCategory {
+  id: string;
+  name: string;
+  type: 'income' | 'expense';
+  icon: string;
+  color: string;
+  created_at: string;
+}
+
+export interface Transaction {
+  id: string;
+  type: 'income' | 'expense';
+  amount: number;
+  category_id?: string;
+  category_name?: string;
+  icon?: string;
+  color?: string;
+  description?: string;
+  date: string;
+  receipt_id?: string;
+  created_at: string;
+}
+
+export const budgetApi = {
+  async getCategories(): Promise<BudgetCategory[]> {
+    const response = await fetch(`${API_BASE.budget}?action=categories`);
+    if (!response.ok) throw new Error('Failed to fetch categories');
+    return response.json();
+  },
+
+  async getTransactions(startDate?: string, endDate?: string): Promise<{ transactions: Transaction[]; summary: { total_income: number; total_expense: number } }> {
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    const response = await fetch(`${API_BASE.budget}?${params}`);
+    if (!response.ok) throw new Error('Failed to fetch transactions');
+    return response.json();
+  },
+
+  async addTransaction(data: { type: 'income' | 'expense'; amount: number; category_id?: string; description?: string; date?: string }): Promise<Transaction> {
+    const response = await fetch(API_BASE.budget, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to add transaction');
+    return response.json();
+  },
+
+  async getAnalytics(period: number = 30): Promise<any[]> {
+    const response = await fetch(`${API_BASE.budget}?action=analytics&period=${period}`);
+    if (!response.ok) throw new Error('Failed to fetch analytics');
     return response.json();
   },
 };

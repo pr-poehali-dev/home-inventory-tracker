@@ -1,0 +1,16 @@
+{
+  "tests": [
+    {
+      "name": "Get budget categories",
+      "method": "GET",
+      "path": "/?action=categories",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Get transactions and summary",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200
+    }
+  ]
+}
