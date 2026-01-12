@@ -2,6 +2,7 @@ import json
 import os
 from datetime import datetime
 from difflib import SequenceMatcher
+from decimal import Decimal
 
 try:
     import psycopg2
@@ -12,6 +13,13 @@ except ImportError:
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 'public')
+
+
+def decimal_default(obj):
+    '''Конвертирует Decimal в float для JSON сериализации'''
+    if isinstance(obj, Decimal):
+        return float(obj)
+    raise TypeError
 
 
 def similarity(a: str, b: str) -> float:
@@ -146,9 +154,9 @@ def handler(event: dict, context) -> dict:
                     if not matched_product or matched_product['quantity'] < ingredient['quantity']:
                         missing_products.append({
                             'name': ingredient['product_name'],
-                            'quantity': ingredient['quantity'],
+                            'quantity': float(ingredient['quantity']),
                             'unit': ingredient['unit'],
-                            'available': matched_product['quantity'] if matched_product else 0
+                            'available': float(matched_product['quantity']) if matched_product else 0
                         })
                 
                 if missing_products:
