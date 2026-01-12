@@ -1,16 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 import Sidebar from '@/components/Sidebar';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RecipeEditForm } from '@/components/recipe/RecipeEditForm';
+import { RecipeStats } from '@/components/recipe/RecipeStats';
+import { IngredientsList } from '@/components/recipe/IngredientsList';
+import { ProductMatchingDialog } from '@/components/recipe/ProductMatchingDialog';
 import { menuApi, storageApi, Recipe, RecipeIngredient, StorageLocation, Product } from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -23,14 +20,8 @@ const RecipeDetail = () => {
   const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [isAddIngredientOpen, setIsAddIngredientOpen] = useState(false);
   const [isMatchingDialogOpen, setIsMatchingDialogOpen] = useState(false);
   const [productMatches, setProductMatches] = useState<{ [key: string]: string }>({});
-  const [newIngredient, setNewIngredient] = useState({
-    product_name: '',
-    quantity: '',
-    unit: 'г',
-  });
 
   useEffect(() => {
     if (id && id !== 'new') {
@@ -103,25 +94,8 @@ const RecipeDetail = () => {
     }
   };
 
-  const handleAddIngredient = () => {
-    if (!newIngredient.product_name || !newIngredient.quantity) {
-      toast.error('Заполните все поля');
-      return;
-    }
-
-    setIngredients([
-      ...ingredients,
-      {
-        id: Math.random().toString(),
-        recipe_id: id || '',
-        product_name: newIngredient.product_name,
-        quantity: parseFloat(newIngredient.quantity),
-        unit: newIngredient.unit,
-      },
-    ]);
-    setNewIngredient({ product_name: '', quantity: '', unit: 'г' });
-    setIsAddIngredientOpen(false);
-    toast.success('Ингредиент добавлен');
+  const handleAddIngredient = (ingredient: RecipeIngredient) => {
+    setIngredients([...ingredients, ingredient]);
   };
 
   const handleRemoveIngredient = (index: number) => {
@@ -158,10 +132,6 @@ const RecipeDetail = () => {
     setIsMatchingDialogOpen(false);
     navigate('/menu');
   };
-
-  const unmatchedIngredients = ingredients.filter(
-    (ing) => !productMatches[ing.product_name]
-  );
 
   if (isLoading) {
     return (
@@ -214,142 +184,18 @@ const RecipeDetail = () => {
         </motion.div>
 
         {isEditMode ? (
-          <Card className="p-6 bg-white/80 backdrop-blur-sm mb-6">
-            <div className="space-y-4">
-              <div>
-                <Label>Название</Label>
-                <Input
-                  value={recipe?.name || ''}
-                  onChange={(e) =>
-                    setRecipe((prev) => ({ ...prev!, name: e.target.value }))
-                  }
-                  placeholder="Название рецепта"
-                />
-              </div>
-              <div>
-                <Label>Описание</Label>
-                <Textarea
-                  value={recipe?.description || ''}
-                  onChange={(e) =>
-                    setRecipe((prev) => ({ ...prev!, description: e.target.value }))
-                  }
-                  placeholder="Описание рецепта"
-                />
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label>Калории</Label>
-                  <Input
-                    type="number"
-                    value={recipe?.total_calories || ''}
-                    onChange={(e) =>
-                      setRecipe((prev) => ({
-                        ...prev!,
-                        total_calories: parseInt(e.target.value),
-                      }))
-                    }
-                    placeholder="0"
-                  />
-                </div>
-                <div>
-                  <Label>Время (мин)</Label>
-                  <Input
-                    type="number"
-                    value={recipe?.cooking_time || ''}
-                    onChange={(e) =>
-                      setRecipe((prev) => ({
-                        ...prev!,
-                        cooking_time: parseInt(e.target.value),
-                      }))
-                    }
-                    placeholder="0"
-                  />
-                </div>
-                <div>
-                  <Label>Порций</Label>
-                  <Input
-                    type="number"
-                    value={recipe?.servings || 1}
-                    onChange={(e) =>
-                      setRecipe((prev) => ({
-                        ...prev!,
-                        servings: parseInt(e.target.value),
-                      }))
-                    }
-                    placeholder="1"
-                  />
-                </div>
-              </div>
-            </div>
-          </Card>
+          <RecipeEditForm recipe={recipe} setRecipe={setRecipe} />
         ) : (
-          recipe && (
-            <div className="grid grid-cols-3 gap-4 mb-6">
-              <Card className="p-4 bg-white/80 backdrop-blur-sm text-center">
-                <Icon name="Flame" size={24} className="mx-auto mb-2 text-orange-500" />
-                <p className="text-sm text-muted-foreground">Калории</p>
-                <p className="text-xl font-bold">{recipe.total_calories || 0} ккал</p>
-              </Card>
-              <Card className="p-4 bg-white/80 backdrop-blur-sm text-center">
-                <Icon name="Timer" size={24} className="mx-auto mb-2 text-blue-500" />
-                <p className="text-sm text-muted-foreground">Время</p>
-                <p className="text-xl font-bold">{recipe.cooking_time || 0} мин</p>
-              </Card>
-              <Card className="p-4 bg-white/80 backdrop-blur-sm text-center">
-                <Icon name="Users" size={24} className="mx-auto mb-2 text-green-500" />
-                <p className="text-sm text-muted-foreground">Порций</p>
-                <p className="text-xl font-bold">{recipe.servings}</p>
-              </Card>
-            </div>
-          )
+          recipe && <RecipeStats recipe={recipe} />
         )}
 
-        <Card className="p-6 bg-white/80 backdrop-blur-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Ингредиенты</h2>
-            {isEditMode && (
-              <Button onClick={() => setIsAddIngredientOpen(true)} size="sm">
-                <Icon name="Plus" size={16} className="mr-2" />
-                Добавить
-              </Button>
-            )}
-          </div>
-
-          {ingredients.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">
-              Ингредиенты не добавлены
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {ingredients.map((ingredient, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon name="CircleDot" size={16} className="text-primary" />
-                    <span className="font-medium">{ingredient.product_name}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Badge variant="outline">
-                      {ingredient.quantity} {ingredient.unit}
-                    </Badge>
-                    {isEditMode && (
-                      <Button
-                        onClick={() => handleRemoveIngredient(index)}
-                        size="sm"
-                        variant="ghost"
-                        className="text-red-600"
-                      >
-                        <Icon name="Trash2" size={16} />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
+        <IngredientsList
+          ingredients={ingredients}
+          isEditMode={isEditMode}
+          onAddIngredient={handleAddIngredient}
+          onRemoveIngredient={handleRemoveIngredient}
+          recipeId={id}
+        />
 
         {isEditMode && (
           <div className="mt-6 flex gap-3">
@@ -366,156 +212,15 @@ const RecipeDetail = () => {
         )}
       </div>
 
-      <Dialog open={isAddIngredientOpen} onOpenChange={setIsAddIngredientOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Добавить ингредиент</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Название</Label>
-              <Input
-                value={newIngredient.product_name}
-                onChange={(e) =>
-                  setNewIngredient({ ...newIngredient, product_name: e.target.value })
-                }
-                placeholder="Например: рис"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Количество</Label>
-                <Input
-                  type="number"
-                  value={newIngredient.quantity}
-                  onChange={(e) =>
-                    setNewIngredient({ ...newIngredient, quantity: e.target.value })
-                  }
-                  placeholder="200"
-                />
-              </div>
-              <div>
-                <Label>Единица</Label>
-                <Select
-                  value={newIngredient.unit}
-                  onValueChange={(value) =>
-                    setNewIngredient({ ...newIngredient, unit: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="г">г</SelectItem>
-                    <SelectItem value="кг">кг</SelectItem>
-                    <SelectItem value="мл">мл</SelectItem>
-                    <SelectItem value="л">л</SelectItem>
-                    <SelectItem value="шт">шт</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <Button onClick={handleAddIngredient} className="w-full">
-              Добавить
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isMatchingDialogOpen} onOpenChange={setIsMatchingDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Сопоставление продуктов</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Выберите продукты из запасов для замены общих названий в рецепте
-            </p>
-
-            {ingredients.map((ingredient) => {
-              const matchedProductId = productMatches[ingredient.product_name];
-              const matchedProduct = availableProducts.find((p) => p.id === matchedProductId);
-
-              return (
-                <Card key={ingredient.id} className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <p className="font-medium">{ingredient.product_name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Требуется: {ingredient.quantity} {ingredient.unit}
-                      </p>
-                    </div>
-                    {matchedProduct && (
-                      <Badge className="bg-green-100 text-green-700">
-                        <Icon name="Check" size={14} className="mr-1" />
-                        Найдено
-                      </Badge>
-                    )}
-                  </div>
-
-                  {matchedProduct ? (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Icon name="ArrowRight" size={16} />
-                      <span>
-                        {matchedProduct.name} (доступно: {matchedProduct.quantity}{' '}
-                        {matchedProduct.unit})
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <p className="text-sm text-orange-600">Подходящий продукт не найден</p>
-                      <Select
-                        value={productMatches[ingredient.product_name] || ''}
-                        onValueChange={(value) =>
-                          setProductMatches({ ...productMatches, [ingredient.product_name]: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Выберите замену" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableProducts
-                            .filter((p) => p.quantity >= ingredient.quantity)
-                            .map((product) => (
-                              <SelectItem key={product.id} value={product.id}>
-                                {product.name} ({product.quantity} {product.unit})
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </Card>
-              );
-            })}
-
-            {unmatchedIngredients.length > 0 && (
-              <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                <p className="text-sm text-orange-800">
-                  <Icon name="AlertTriangle" size={16} className="inline mr-2" />
-                  {unmatchedIngredients.length} ингредиентов без замены
-                </p>
-              </div>
-            )}
-
-            <div className="flex gap-3">
-              <Button
-                onClick={handleConfirmMatching}
-                className="flex-1"
-                disabled={unmatchedIngredients.length > 0}
-              >
-                Подтвердить и приготовить
-              </Button>
-              <Button
-                onClick={() => setIsMatchingDialogOpen(false)}
-                variant="outline"
-              >
-                Отмена
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ProductMatchingDialog
+        isOpen={isMatchingDialogOpen}
+        onClose={() => setIsMatchingDialogOpen(false)}
+        ingredients={ingredients}
+        availableProducts={availableProducts}
+        productMatches={productMatches}
+        setProductMatches={setProductMatches}
+        onConfirm={handleConfirmMatching}
+      />
     </div>
   );
 };
