@@ -1,0 +1,41 @@
+{
+  "name": "Учёт Запасов",
+  "short_name": "Запасы",
+  "description": "Домашний учёт продуктов, рецептов и бюджета",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0ea5e9",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://cdn.poehali.dev/projects/86786c08-86c8-4b59-8b74-95892b8e7856/files/120c8156-bc48-41e8-b4d3-2d37f7b24b63.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://cdn.poehali.dev/projects/86786c08-86c8-4b59-8b74-95892b8e7856/files/120c8156-bc48-41e8-b4d3-2d37f7b24b63.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    }
+  ],
+  "categories": ["productivity", "lifestyle", "food"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Добавить продукт",
+      "short_name": "Продукт",
+      "description": "Быстро добавить продукт в запасы",
+      "url": "/storage",
+      "icons": []
+    },
+    {
+      "name": "Список покупок",
+      "short_name": "Покупки",
+      "description": "Открыть список покупок",
+      "url": "/shopping",
+      "icons": []
+    }
+  ]
+}
