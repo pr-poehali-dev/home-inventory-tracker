@@ -67,6 +67,17 @@ const StorageDetail = () => {
     setIsEditDialogOpen(true);
   };
 
+  const handleDiscardProduct = async (product: Product) => {
+    try {
+      await storageApi.deleteProduct(product.id);
+      await fetchData();
+      toast.success(`${product.name} выброшен`);
+    } catch (error) {
+      toast.error('Ошибка');
+      console.error(error);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-cyan-50">
@@ -141,6 +152,7 @@ const StorageDetail = () => {
                 product={product} 
                 onDelete={handleDeleteProduct}
                 onEdit={handleEditProduct}
+                onDiscard={handleDiscardProduct}
               />
             </motion.div>
           ))}

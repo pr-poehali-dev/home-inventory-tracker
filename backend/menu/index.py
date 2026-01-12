@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import datetime
+from datetime import datetime, date
 from difflib import SequenceMatcher
 from decimal import Decimal
 
@@ -42,7 +42,7 @@ def find_matching_product(product_name: str, available_products: list) -> dict:
 
 
 def handler(event: dict, context) -> dict:
-    '''API для управления меню, рецептами и готовыми блюдами'''
+    '''API для управления меню, рецептами, готовыми блюдами и дневником питания'''
     method = event.get('httpMethod', 'GET')
 
     if method == 'OPTIONS':
@@ -65,6 +65,44 @@ def handler(event: dict, context) -> dict:
         action = query_params.get('action')
 
         if method == 'GET':
+            if action == 'food_diary':
+                date_param = query_params.get('date')
+                if date_param == 'today' or not date_param:
+                    today = date.today()
+                    cur.execute(
+                        f'''SELECT * FROM {SCHEMA}.food_diary 
+                            WHERE DATE(eaten_date) = %s 
+                            ORDER BY eaten_date DESC''',
+                        (today,)
+                    )
+                    entries = cur.fetchall()
+                    
+                    total_calories = sum(float(e['calories']) for e in entries)
+                    
+                    return {
+                        'statusCode': 200,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({
+                            'entries': [dict(e) for e in entries],
+                            'total_calories': total_calories
+                        }, default=decimal_default, ensure_ascii=False),
+                        'isBase64Encoded': False
+                    }
+                else:
+                    cur.execute(
+                        f'''SELECT * FROM {SCHEMA}.food_diary 
+                            WHERE DATE(eaten_date) = %s 
+                            ORDER BY eaten_date DESC''',
+                        (date_param,)
+                    )
+                    entries = cur.fetchall()
+                    return {
+                        'statusCode': 200,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps([dict(e) for e in entries], default=decimal_default, ensure_ascii=False),
+                        'isBase64Encoded': False
+                    }
+
             if action == 'prepared_meals':
                 cur.execute(
                     f'''SELECT pm.*, r.name as recipe_name, r.image_url
@@ -268,6 +306,30 @@ def handler(event: dict, context) -> dict:
                     'isBase64Encoded': False
                 }
 
+            if action == 'add_food_diary':
+                meal_name = body.get('meal_name')
+                portion_weight = body.get('portion_weight')
+                calories = body.get('calories')
+                meal_type = body.get('meal_type')
+                notes = body.get('notes')
+                eaten_date = body.get('eaten_date', datetime.now().isoformat())
+                
+                cur.execute(
+                    f'''INSERT INTO {SCHEMA}.food_diary 
+                        (meal_name, portion_weight, calories, meal_type, eaten_date, notes)
+                        VALUES (%s, %s, %s, %s, %s, %s) RETURNING *''',
+                    (meal_name, portion_weight, calories, meal_type, eaten_date, notes)
+                )
+                conn.commit()
+                
+                entry = cur.fetchone()
+                return {
+                    'statusCode': 201,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps(dict(entry), default=decimal_default, ensure_ascii=False),
+                    'isBase64Encoded': False
+                }
+
             if action == 'create_recipe':
                 cur.execute(
                     f'''INSERT INTO {SCHEMA}.recipes (name, description, total_calories, cooking_time, servings, image_url)
@@ -352,6 +414,27 @@ def handler(event: dict, context) -> dict:
                     }
                 
                 cur.execute(f'DELETE FROM {SCHEMA}.prepared_meals WHERE id = %s', (meal_id,))
+                conn.commit()
+                
+                return {
+                    'statusCode': 204,
+                    'headers': {'Access-Control-Allow-Origin': '*'},
+                    'body': '',
+                    'isBase64Encoded': False
+                }
+            
+            elif action == 'delete_food_diary':
+                entry_id = query_params.get('id')
+                
+                if not entry_id:
+                    return {
+                        'statusCode': 400,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'Entry ID required'}),
+                        'isBase64Encoded': False
+                    }
+                
+                cur.execute(f'DELETE FROM {SCHEMA}.food_diary WHERE id = %s', (entry_id,))
                 conn.commit()
                 
                 return {

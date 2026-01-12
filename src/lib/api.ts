@@ -272,6 +272,49 @@ export interface PlannedRecipe {
   planned_date: string;
 }
 
+export interface FoodDiaryEntry {
+  id: string;
+  meal_name: string;
+  portion_weight: number;
+  calories: number;
+  meal_type?: string;
+  eaten_date: string;
+  notes?: string;
+  created_at: string;
+}
+
+export const foodDiaryApi = {
+  async getTodayEntries(): Promise<{ entries: FoodDiaryEntry[]; total_calories: number }> {
+    const response = await fetch(`${API_BASE.menu}?action=food_diary&date=today`);
+    if (!response.ok) throw new Error('Failed to fetch food diary');
+    return response.json();
+  },
+
+  async addEntry(data: {
+    meal_name: string;
+    portion_weight: number;
+    calories: number;
+    meal_type?: string;
+    notes?: string;
+    eaten_date?: string;
+  }): Promise<FoodDiaryEntry> {
+    const response = await fetch(`${API_BASE.menu}?action=add_food_diary`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to add food diary entry');
+    return response.json();
+  },
+
+  async deleteEntry(id: string): Promise<void> {
+    const response = await fetch(`${API_BASE.menu}?action=delete_food_diary&id=${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete food diary entry');
+  },
+};
+
 export const menuApi = {
   async getRecipes(): Promise<Recipe[]> {
     const response = await fetch(API_BASE.menu);

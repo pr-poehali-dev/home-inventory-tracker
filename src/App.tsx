@@ -12,6 +12,7 @@ import ScanReceipt from "./pages/ScanReceipt";
 import Budget from "./pages/Budget";
 import Menu from "./pages/Menu";
 import RecipeDetail from "./pages/RecipeDetail";
+import FoodDiary from "./pages/FoodDiary";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/budget" element={<Budget />} />
           <Route path="/menu" element={<Menu />} />
           <Route path="/recipe/:id" element={<RecipeDetail />} />
+          <Route path="/food-diary" element={<FoodDiary />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

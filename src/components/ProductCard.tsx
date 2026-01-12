@@ -8,9 +8,10 @@ interface ProductCardProps {
   product: Product;
   onDelete?: (id: string) => void;
   onEdit?: (product: Product) => void;
+  onDiscard?: (product: Product) => void;
 }
 
-export const ProductCard = ({ product, onDelete, onEdit }: ProductCardProps) => {
+export const ProductCard = ({ product, onDelete, onEdit, onDiscard }: ProductCardProps) => {
   const isExpiringSoon = product.expiry_date
     ? new Date(product.expiry_date) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     : false;
@@ -85,6 +86,17 @@ export const ProductCard = ({ product, onDelete, onEdit }: ProductCardProps) => 
                 className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
               >
                 <Icon name="Pencil" size={16} />
+              </Button>
+            )}
+            {onDiscard && (
+              <Button
+                onClick={() => onDiscard(product)}
+                size="sm"
+                variant="ghost"
+                className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                title="Выбросить"
+              >
+                <Icon name="Trash" size={16} />
               </Button>
             )}
             {onDelete && (
